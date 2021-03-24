@@ -66,7 +66,14 @@ def main():
         description='Format Ablog news post to text format with ANSI escape codes.',
     )
     cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
-    cli.add_argument('-d', '--debug', dest='debug', action='store_true', required=False, help='Debug verbosity')
+    cli.add_argument('-d', '--debug', help='Debug verbosity', action='store_true', required=False)
+    cli.add_argument(
+        '--briefing',
+        help=f'limit the MOTD to the first paragraph of the news post (default: False)',
+        default=False,
+        action='store_true',
+        required=False,
+    )
     cli.add_argument(
         '--lifespan',
         help=f'lifespan in hours of last news posts as MOTD (default: {DEFAULT_LIFETIME} hours)',
@@ -162,7 +169,7 @@ def main():
         ansi_file = change_file_extension(motd['source'], '.ansi')
         motd['file'] = os.path.join(args.motd_dir, f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}")
         # Convert RST to ANSI text
-        make_ansicode_from_rst(motd['file'], motd['source'])
+        make_ansicode_from_rst(motd['file'], motd['source'], briefing=args.briefing)
         # Update ANSI text: wrap, indent and add header/footer
         try:
             with open(motd['file'], 'r') as motd_file:

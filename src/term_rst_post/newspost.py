@@ -86,12 +86,17 @@ class ANSICodeWriter(writers.Writer):
     # Final translated form of `document`
     output = None
 
-    def __init__(self):
+    def __init__(self, briefing=False):
+        """
+        Set custom ANSICode translator to the writer
+        - briefing: (boolean) Limit translation to a single paragraph
+        """
         writers.Writer.__init__(self)
         self.translator_class = ANSICodeTranslator
+        self.briefing = briefing
 
     def translate(self):
-        visitor = self.translator_class(self.document)
+        visitor = self.translator_class(self.document, briefing=self.briefing)
         self.document.walkabout(visitor)
         self.output = visitor.astext()
 
@@ -99,9 +104,16 @@ class ANSICodeWriter(writers.Writer):
 class ANSICodeTranslator(nodes.NodeVisitor):
     """
     Custom document translator to ANSI escape code
+    The whole document will be translated unless 'briefing' is True. In such a case:
+     - the translation is limited to the first paragraph inside the first section
+     - all paragraphs inside update directives before that first main paragraph are included
     """
 
-    def __init__(self, document):
+    def __init__(self, document, briefing=False):
+        """
+        Initialize ANSICode translator
+        - briefing: (boolean) Limit translation to a single paragraph
+        """
         logger.debug("Using custom ANSICode translator with docutils document writer")
 
         nodes.NodeVisitor.__init__(self, document)
@@ -113,6 +125,29 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         self.body = []
 
         self.section_level = 0
+
+        self.brief_translation = briefing
+        self.beyond_limit = False
+
+        # Identify main paragraph of the document to limit translation
+        first_section_index = document.first_child_matching_class(nodes.section)
+        if first_section_index:
+            logger.debug(f"Found first section of the document with index {first_section_index}")
+            self.first_section = document[first_section_index]
+
+            first_paragraph_index = self.first_section.first_child_matching_class(nodes.paragraph)
+            if first_paragraph_index:
+                logger.debug(f"Found main paragraph of the document with index {first_paragraph_index}")
+                self.first_main_paragraph = self.first_section[first_paragraph_index]
+            else:
+                error_exit(
+                    "RST document is not suitable for single paragraph conversion, "
+                    "paragraph inside section not found"
+                )
+        else:
+            error_exit(
+                "RST document is not suitable for single paragraph conversion, " "main section element not found"
+            )
 
         # ANSI Escape Codes
         self.defs = {
@@ -137,88 +172,111 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         if self.body and self.body[-1][-1] != '\n':
             self.body.append('\n')
 
-    # Supported Nodes
+    # Supported inline node elements
     def visit_Text(self, node):
-        text = node.astext()
-        self.body.append(text)
+        if not self.beyond_limit:
+            text = node.astext()
+            self.body.append(text)
 
     def depart_Text(self, node):
         pass
 
     def visit_emphasis(self, node):
-        self.body.append(self.defs['emphasis'][0])
+        if not self.beyond_limit:
+            self.body.append(self.defs['emphasis'][0])
 
     def depart_emphasis(self, node):
-        self.body.append(self.defs['emphasis'][1])
-        logger.debug("Translated emphasis element to ANSICode: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            self.body.append(self.defs['emphasis'][1])
+            logger.debug("Translated emphasis element to ANSICode: '{}'".format(node.astext()))
 
     def visit_strong(self, node):
-        self.body.append(self.defs['strong'][0])
+        if not self.beyond_limit:
+            self.body.append(self.defs['strong'][0])
 
     def depart_strong(self, node):
-        self.body.append(self.defs['strong'][1])
-        logger.debug("Translated strong element to ANSICode: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            self.body.append(self.defs['strong'][1])
+            logger.debug("Translated strong element to ANSICode: '{}'".format(node.astext()))
 
     def visit_literal(self, node):
-        self.body.append(self.defs['literal'][0])
+        if not self.beyond_limit:
+            self.body.append(self.defs['literal'][0])
 
     def depart_literal(self, node):
-        self.body.append(self.defs['literal'][1])
-        logger.debug("Translated literal element to ANSICode: '{}'".format(node.astext()))
-
-    def visit_inline(self, node):
-        """ Badges use inline elements"""
-        for badge in self.badges:
-            if badge in node.astext():
-                self.body.append(self.defs[badge.lower()][0])
-
-    def depart_inline(self, node):
-        """ Badges use inline elements"""
-        for badge in self.badges:
-            if badge in node.astext():
-                self.body.append(self.defs[badge.lower()][1])
-                logger.debug("Translated badge element to ANSICode: '{}'".format(node.astext()))
-
-    def visit_problematic(self, node):
-        self.body.append(self.defs['problematic'][0])
-
-    def depart_problematic(self, node):
-        self.body.append(self.defs['problematic'][1])
+        if not self.beyond_limit:
+            self.body.append(self.defs['literal'][1])
+            logger.debug("Translated literal element to ANSICode: '{}'".format(node.astext()))
 
     def visit_reference(self, node):
         """ Encapsulate links with names """
-        if 'name' in node.attributes:
-            self.body.append('[')
+        if not self.beyond_limit:
+            if 'name' in node.attributes:
+                self.body.append('[')
 
     def depart_reference(self, node):
         """ Encapsulate links with names """
-        if 'name' in node.attributes:
-            self.body.append(']({})'.format(node.attributes['refuri']))
-            logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            if 'name' in node.attributes:
+                self.body.append(']({})'.format(node.attributes['refuri']))
+                logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
 
+    def visit_inline(self, node):
+        """ Badges use inline elements"""
+        if not self.beyond_limit:
+            for badge in self.badges:
+                if badge in node.astext():
+                    self.body.append(self.defs[badge.lower()][0])
+
+    def depart_inline(self, node):
+        """ Badges use inline elements"""
+        if not self.beyond_limit:
+            for badge in self.badges:
+                if badge in node.astext():
+                    self.body.append(self.defs[badge.lower()][1])
+                    logger.debug("Translated badge element to ANSICode: '{}'".format(node.astext()))
+
+    def visit_problematic(self, node):
+        if not self.beyond_limit:
+            self.body.append(self.defs['problematic'][0])
+
+    def depart_problematic(self, node):
+        if not self.beyond_limit:
+            self.body.append(self.defs['problematic'][1])
+
+    # Supported block node elements
     def visit_paragraph(self, node):
-        if not isinstance(node.parent, nodes.list_item):
+        if not self.beyond_limit and not isinstance(node.parent, nodes.list_item):
+            # Ensure spacing for paragraphs not in lists
             self.ensure_eol()
             self.body.append('\n')
 
     def depart_paragraph(self, node):
-        self.body.append('\n')
+        if not self.beyond_limit:
+            self.body.append('\n')
+
+            if self.brief_translation and node == self.first_main_paragraph:
+                # Stop translation after end of first main paragraph
+                self.beyond_limit = True
 
     def visit_bullet_list(self, node):
-        self.body.append('\n')
+        if not self.beyond_limit:
+            self.body.append('\n')
 
     def depart_bullet_list(self, node):
         pass
 
     def visit_enumerated_list(self, node):
-        self.body.append('\n')
+        if not self.beyond_limit:
+            self.body.append('\n')
 
     def depart_enumerated_list(self, node):
         pass
 
     def visit_list_item(self, node):
-        self.body.append(' * ')
-        logger.debug("Translated list item to markdown: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            self.body.append(' * ')
+            logger.debug("Translated list item to markdown: '{}'".format(node.astext()))
 
     def visit_section(self, node):
         self.section_level += 1
@@ -227,20 +285,22 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         self.section_level -= 1
 
     def visit_title(self, node):
-        self.ensure_eol()
-        if self.section_level == 0:
-            self.head.append('\n{}# '.format(self.defs['strong'][0]))
-        else:
-            self.body.append(
-                '\n{}{} '.format(
-                    self.defs['strong'][0],
-                    self.section_level * '#',
+        if not self.beyond_limit:
+            self.ensure_eol()
+            if self.section_level == 0:
+                self.head.append('\n{}# '.format(self.defs['strong'][0]))
+            else:
+                self.body.append(
+                    '\n{}{} '.format(
+                        self.defs['strong'][0],
+                        self.section_level * '#',
+                    )
                 )
-            )
 
     def depart_title(self, node):
-        self.body.append('{}\n'.format(self.defs['strong'][1]))
-        logger.debug("Translated title element to markdown: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            self.body.append('{}\n'.format(self.defs['strong'][1]))
+            logger.debug("Translated title element to markdown: '{}'".format(node.astext()))
 
     def visit_subtitle(self, node):
         if isinstance(node.parent, nodes.document):
@@ -249,23 +309,26 @@ class ANSICodeTranslator(nodes.NodeVisitor):
 
     def visit_UpdateNode(self, node):
         """ Ablog update directive """
-        self.body.append(
-            '\n{0} Update {1} {2}'.format(
-                self.defs['update'][0],
-                node.attributes['date'],
-                self.defs['update'][1],
+        if not self.beyond_limit:
+            self.body.append(
+                '\n{0} Update {1} {2}'.format(
+                    self.defs['update'][0],
+                    node.attributes['date'],
+                    self.defs['update'][1],
+                )
             )
-        )
 
     def depart_UpdateNode(self, node):
         """ Ablog update directive """
-        self.body.append('\n')
-        logger.debug("Translated Ablog update directive to ANSICode: '{}'".format(node.astext()))
+        if not self.beyond_limit:
+            self.body.append('\n')
+            logger.debug("Translated Ablog update directive to ANSICode: '{}'".format(node.astext()))
 
     def visit_transition(self, node):
         """Replace a transition by a horizontal rule"""
-        self.body.append('\n---\n\n')
-        raise nodes.SkipNode
+        if not self.beyond_limit:
+            self.body.append('\n---\n\n')
+            raise nodes.SkipNode
 
     # Irrelevant Nodes
     def visit_docinfo(self, node):
@@ -301,11 +364,12 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         pass
 
 
-def make_ansicode_from_rst(ansicode_filename, rst_filename):
+def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     """
     Convert document in RST to text using ANSI escape code
     - ansicode_filename: (string) Path of text file with ANSI escape code
     - rst_filename: (string) Path of RST file
+    - briefing: (boolean) Limit conversion to a single paragraph
     """
     # Add update directive from ablog
     parsers.rst.directives.register_directive('update', UpdateDirective)
@@ -325,7 +389,12 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename):
     else:
         logger.debug("Opened file with write access: '{}'".format(ansicode_filename))
 
-    core.publish_file(source=source, destination=destination, reader=MOTDReader(), writer=ANSICodeWriter())
+    core.publish_file(
+        source=source,
+        destination=destination,
+        reader=MOTDReader(),
+        writer=ANSICodeWriter(briefing=briefing),
+    )
     logger.info("Converted RST document to ANSI Escape Code: '{}'".format(ansicode_filename))
 
     try:
