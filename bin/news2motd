@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+#
+# Copyright 2021-2021 Vrije Universiteit Brussel
+#
+# This file is part of term_rst_post,
+# originally created by the HPC team of Vrije Universiteit Brussel (https://hpc.vub.be),
+# with support of Vrije Universiteit Brussel (https://www.vub.be),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
+#
+# https://github.com/sisc-hpc/term_rst_post
+#
+# term_rst_post is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v3.
+#
+# term_rst_post is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this code.  If not, see <http://www.gnu.org/licenses/>.
+#
+##
+"""
+Read a news item from Ablog and convert it to text file using ANSI escape code
+News can be retrieved from Ablog feed in HTML format or directly from document in RST format
+MOTD can be modified with header and/or footer parts
+
+@author: Alex Domingo (Vrije Universiteit Brussel)
+"""
+
+import argparse
+import logging
+import os
+
+from datetime import date, datetime
+
+from term_rst_post.ansimotd import accomodate_motd, enable_motd
+from term_rst_post.exit import error_exit
+from term_rst_post.filetools import change_file_extension, fileobj_extension, rst_path_from_html_link, valid_dirpath
+from term_rst_post.newsfeed import get_top_ablog_news
+from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
+from term_rst_post.version import VERSION
+
+DEFAULT_LIFETIME = 48
+
+MOTD_DATE_FORMAT = '%d/%m/%Y'
+MOTD_CFG = 'user.motd.cfg'
+MOTD_FALLBACK = 'user.motd.normal'
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    datefmt='%d-%m-%Y %H:%M:%S',
+    level=logging.INFO,
+)
+logger = logging.getLogger()
+
+
+def main():
+    # Parse command line arguments
+    cli = argparse.ArgumentParser(
+        prog='news2motd',
+        description='Format Ablog news post to text format with ANSI escape codes.',
+    )
+    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
+    cli.add_argument('-d', '--debug', dest='debug', action='store_true', required=False, help='Debug verbosity')
+    cli.add_argument(
+        '--lifespan',
+        help=f'lifespan in hours of last news posts as MOTD (default: {DEFAULT_LIFETIME} hours)',
+        default=DEFAULT_LIFETIME,
+        type=int,
+        required=False,
+    )
+    cli.add_argument(
+        '--ablog-dir',
+        help='path to Ablog root directory with news posts in RST format',
+        default=None,
+        required=False,
+        type=valid_dirpath,
+    )
+    cli.add_argument(
+        '--motd-dir',
+        help='path to directory with MOTD text messages (default: CWD)',
+        default=os.getcwd(),
+        required=False,
+        type=valid_dirpath,
+    )
+    cli.add_argument(
+        '--motd-header',
+        help='path to file to prepend to MOTD text messages (default: None)',
+        default=None,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-footer',
+        help='path to file to append to MOTD text messages (default: None)',
+        default=None,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-cfg',
+        help=f'name of configuration file in MOTD directory (default: {MOTD_CFG})',
+        default=MOTD_CFG,
+        required=False,
+        type=str,
+    )
+    cli.add_argument(
+        '--motd-fallback',
+        help=f'name of file in MOTD directory with fallback text message (default: {MOTD_FALLBACK})',
+        default=MOTD_FALLBACK,
+        required=False,
+        type=str,
+    )
+    cli.add_argument(
+        'newspost',
+        help='RST file with Ablog news post or HTML file with Ablog news feed',
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    args = cli.parse_args()
+
+    # Set log level
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
+    # Identify the RST file with the news post
+    newspost_ext = fileobj_extension(args.newspost)
+    if newspost_ext in ['.html', '.HTML', '.htm', '.HTM']:
+        if args.ablog_dir:
+            try:
+                # Parse HTML and get MOTD date and file
+                motd = get_top_ablog_news(args.newspost)
+                # Convert HTML link to absolute path
+                motd['source'] = rst_path_from_html_link(motd['source'], args.ablog_dir)
+            except (AttributeError, FileNotFoundError) as err:
+                error_exit(err)
+        else:
+            error_exit("Parsing HTML news feed requires defining the root directory of Ablog (--ablog-dir)")
+    else:
+        try:
+            # Parse RST and get MOTD date
+            motd = get_post_info_from_rst(args.newspost)
+        except (IndexError, ValueError) as err:
+            error_exit(err)
+
+    # Age of MOTD news post
+    try:
+        motd['date'] = datetime.strptime(motd['date'], MOTD_DATE_FORMAT)
+    except ValueError as err:
+        error_exit("Date of MOTD news entry is malformed: '{}'".format(motd['date']), err)
+    else:
+        motd['age'] = datetime.today() - motd['date']
+        age_hours = motd['age'].total_seconds() / 3600
+        logger.debug(f"News post with MOTD is {age_hours:.1f} hours old")
+
+    if motd['age'].total_seconds() < args.lifespan * 3600:
+        # Generate new MOTD message for the recent news post
+        ansi_file = change_file_extension(motd['source'], '.ansi')
+        motd['file'] = os.path.join(args.motd_dir, f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}")
+        # Convert RST to ANSI text
+        make_ansicode_from_rst(motd['file'], motd['source'])
+        # Update ANSI text: wrap, indent and add header/footer
+        try:
+            with open(motd['file'], 'r') as motd_file:
+                accomodate_motd(args.motd_dir, motd_file, head_file=args.motd_header, foot_file=args.motd_footer)
+        except IOError as err:
+            error_exit(f"Failed to read text file: '{motd['file']}'", err)
+        else:
+            motd_file.close()
+    else:
+        # Use fallback MOTD
+        motd['file'] = os.path.join(args.motd_dir, args.motd_fallback)
+        logger.warning(f"MOTD is older than {args.lifespan}h, falling back to default MOTD: '{args.motd_fallback}'")
+
+    # Enable MOTD
+    motd_cfg_file = os.path.join(args.motd_dir, args.motd_cfg)
+    enable_motd(args.motd_cfg, motd['file'])
+
+    logger.info("Successfully enabled MOTD in file: '{}'".format(motd['file']))
+
+
+if __name__ == "__main__":
+    main()

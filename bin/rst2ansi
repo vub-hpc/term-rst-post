@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+#
+# Copyright 2021-2021 Vrije Universiteit Brussel
+#
+# This file is part of term_rst_post,
+# originally created by the HPC team of Vrije Universiteit Brussel (https://hpc.vub.be),
+# with support of Vrije Universiteit Brussel (https://www.vub.be),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
+#
+# https://github.com/sisc-hpc/term_rst_post
+#
+# term_rst_post is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v3.
+#
+# term_rst_post is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this code.  If not, see <http://www.gnu.org/licenses/>.
+#
+##
+"""
+Convert document in RST format to text file formatted with ANSI escape code
+
+@author: Alex Domingo (Vrije Universiteit Brussel)
+"""
+
+import argparse
+import logging
+import os
+
+from term_rst_post.ansimotd import accomodate_motd
+from term_rst_post.filetools import change_file_extension
+from term_rst_post.newspost import make_ansicode_from_rst
+from term_rst_post.version import VERSION
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    datefmt='%d-%m-%Y %H:%M:%S',
+    level=logging.INFO,
+)
+logger = logging.getLogger()
+
+
+def main():
+    # Parse command line arguments
+    cli = argparse.ArgumentParser(
+        prog='rst2ansi',
+        description='Convert RST document to text formatted with ANSI escape codes.',
+    )
+    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
+    cli.add_argument('-d', '--debug', dest='debug', action='store_true', required=False, help='debug verbosity')
+    cli.add_argument(
+        '-w',
+        '--wrap',
+        help='wrap ANSI text file to given column width (default: False)',
+        default=0,
+        type=int,
+        required=False,
+    )
+    cli.add_argument(
+        'document',
+        help='path to RST file',
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    args = cli.parse_args()
+
+    # Set log level
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
+    # RST file conversion
+    ansi_file = change_file_extension(args.document.name, '.ansi')
+    make_ansicode_from_rst(ansi_file, args.document.name)
+
+    # Wrap text file
+    if args.wrap > 0:
+        try:
+            with open(ansi_file, 'r') as text_file:
+                accomodate_motd(os.getcwd(), text_file, wrap_width=args.wrap)
+        except IOError as err:
+            error_exit(f"Failed to open ANSI text file to wrap its contents: '{ansi_file}'", err)
+        else:
+            text_file.close()
+
+
+if __name__ == "__main__":
+    main()

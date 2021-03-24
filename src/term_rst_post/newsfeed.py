@@ -1,0 +1,69 @@
+#
+# Copyright 2021-2021 Vrije Universiteit Brussel
+#
+# This file is part of term_rst_post,
+# originally created by the HPC team of Vrije Universiteit Brussel (https://hpc.vub.be),
+# with support of Vrije Universiteit Brussel (https://www.vub.be),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
+#
+# https://github.com/sisc-hpc/term_rst_post
+#
+# term_rst_post is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v3.
+#
+# term_rst_post is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this code.  If not, see <http://www.gnu.org/licenses/>.
+#
+##
+"""
+Parser of Ablog feeds in HTML format.
+
+@author: Alex Domingo (Vrije Universiteit Brussel)
+"""
+
+import logging
+
+from bs4 import BeautifulSoup
+
+from term_rst_post.exit import error_exit
+
+logger = logging.getLogger()
+
+
+def get_top_ablog_news(newslist):
+    """
+    Parse list of news in Ablog feed and retrieve top item's date and file path
+    News items are identified by their H2 element
+    - newslist: (file) HTML document
+    """
+    try:
+        data = newslist.read()
+    except ValueError as err:
+        error_exit("Cannot read file '{}'".format(newslist.name), err)
+    else:
+        logger.debug("Read contents of file '{}'".format(newslist.name))
+
+    soup = BeautifulSoup(data, 'html.parser')
+
+    # Select top news item
+    try:
+        motd_tag = soup.find('h2')
+        motd = {
+            'title': motd_tag.a.string,
+            'source': motd_tag.a['href'],
+            'date': motd_tag.parent.find('li').i.next_sibling.strip(),
+        }
+    except AttributeError:
+        raise AttributeError(f"Malformed HTML newsfeed from Ablog, missing news header (H2): '{newslist.name}'")
+    else:
+        logger.info("Found MOTD news entry from {}: '{}'".format(motd['date'], motd['title']))
+
+    return motd
