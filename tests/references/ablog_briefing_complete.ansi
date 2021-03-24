@@ -1,0 +1,16 @@
+
+[1m# Test news post with complete formatting[22m
+
+[7m Update 03/01/2021 [27m
+
+There is yet another important new development reagrding the contents of this post.
+
+All previous problems are now solved.
+
+
+[7m Update 02/01/2021 [27m
+
+[1;31;7m Warning [0;27m There is an [1mimportant[22m new development reagrding the contents of this post.
+
+
+[1;32;7m Info [0;27m Lorem ipsum dolor sit amet, consectetur adipiscing elit. [4mSome text with emphasis.[24m Nulla sed orci nec orci elementum facilisis vitae at mauris. Nulla eu ultrices lectus. [1mSome text in bold.[22m Integer vitae purus vel quam laoreet fringilla vitae nec diam. Donec non aliquet nisi. Vivamus quis aliquam purus. Ut non ipsum sit amet eros imperdiet gravida at a tellus. [7m`Some literal text.`[27m Curabitur at ipsum bibendum nunc tincidunt bibendum nec sed sapien. Donec ultrices nunc ligula, aliquet elementum diam tempus at. Morbi condimentum, ligula vitae venenatis aliquam, tellus lectus pulvinar est, vitae efficitur odio magna vitae lorem. Nam quam risus, pellentesque nec facilisis eu, facilisis vitae justo. Curabitur a ipsum placerat libero aliquam volutpat. Proin interdum porta consequat.

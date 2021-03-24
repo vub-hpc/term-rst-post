@@ -34,8 +34,7 @@ import pytest
 
 from term_rst_post import newspost
 
-
-@pytest.mark.parametrize(
+ABLOG_NEWSPOST = (
     'ablog_newspost',
     [
         'ablog_newspost_simple',
@@ -52,20 +51,6 @@ from term_rst_post import newspost
         'ablog_newspost_complete',
     ],
 )
-def test_make_ansicode_from_rst(ablog_newspost, tmpdir, exampledir, refdir):
-    example_doc = os.path.join(exampledir, f"{ablog_newspost}.rst")
-    test_doc = os.path.join(tmpdir, f"{ablog_newspost}.ansi")
-    reference_doc = os.path.join(refdir, f"{ablog_newspost}.ansi")
-
-    newspost.make_ansicode_from_rst(test_doc, example_doc)
-
-    with open(test_doc, 'r') as testfile:
-        test_doc_text = testfile.read()
-
-    with open(reference_doc, 'r') as reffile:
-        reference_doc_text = reffile.read()
-
-    assert test_doc_text == reference_doc_text
 
 
 def test_get_post_info_from_rst(exampledir):
@@ -82,3 +67,40 @@ def test_get_post_info_from_rst(exampledir):
     post_info = {k: post_info.get(k, None) for k in reference_result}
 
     assert post_info == reference_result
+
+
+@pytest.mark.parametrize(*ABLOG_NEWSPOST)
+def test_make_ansicode_from_rst(ablog_newspost, tmpdir, exampledir, refdir):
+    example_doc = os.path.join(exampledir, f"{ablog_newspost}.rst")
+    test_doc = os.path.join(tmpdir, f"{ablog_newspost}.ansi")
+
+    newspost.make_ansicode_from_rst(test_doc, example_doc, briefing=False)
+
+    with open(test_doc, 'r') as testfile:
+        test_doc_text = testfile.read()
+
+    reference_doc = os.path.join(refdir, f"{ablog_newspost}.ansi")
+
+    with open(reference_doc, 'r') as reffile:
+        reference_doc_text = reffile.read()
+
+    assert test_doc_text == reference_doc_text
+
+
+@pytest.mark.parametrize(*ABLOG_NEWSPOST)
+def test_make_ansicode_from_rst_briefing(ablog_newspost, tmpdir, exampledir, refdir):
+    example_doc = os.path.join(exampledir, f"{ablog_newspost}.rst")
+    test_doc = os.path.join(tmpdir, f"{ablog_newspost}.ansi")
+
+    newspost.make_ansicode_from_rst(test_doc, example_doc, briefing=True)
+
+    with open(test_doc, 'r') as testfile:
+        test_doc_text = testfile.read()
+
+    ablog_briefing = ablog_newspost.replace('newspost', 'briefing')
+    reference_doc = os.path.join(refdir, f"{ablog_briefing}.ansi")
+
+    with open(reference_doc, 'r') as reffile:
+        reference_doc_text = reffile.read()
+
+    assert test_doc_text == reference_doc_text
