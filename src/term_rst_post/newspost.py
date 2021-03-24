@@ -128,26 +128,25 @@ class ANSICodeTranslator(nodes.NodeVisitor):
 
         self.brief_translation = briefing
         self.beyond_limit = False
+        self.first_main_paragraph = None
 
         # Identify main paragraph of the document to limit translation
-        first_section_index = document.first_child_matching_class(nodes.section)
-        if first_section_index:
-            logger.debug(f"Found first section of the document with index {first_section_index}")
-            self.first_section = document[first_section_index]
+        if self.brief_translation:
+            error_msg = "RST document is not suitable for single paragraph conversion, {} not found"
 
-            first_paragraph_index = self.first_section.first_child_matching_class(nodes.paragraph)
-            if first_paragraph_index:
-                logger.debug(f"Found main paragraph of the document with index {first_paragraph_index}")
-                self.first_main_paragraph = self.first_section[first_paragraph_index]
+            first_section_index = document.first_child_matching_class(nodes.section)
+            if first_section_index:
+                self.first_section = document[first_section_index]
+                logger.debug(f"Found first section of the document with index {first_section_index}")
+
+                first_paragraph_index = self.first_section.first_child_matching_class(nodes.paragraph)
+                if first_paragraph_index:
+                    self.first_main_paragraph = self.first_section[first_paragraph_index]
+                    logger.debug(f"Found main paragraph of the document with index {first_paragraph_index}")
+                else:
+                    error_exit(error_msg.format("paragraph inside first section"))
             else:
-                error_exit(
-                    "RST document is not suitable for single paragraph conversion, "
-                    "paragraph inside section not found"
-                )
-        else:
-            error_exit(
-                "RST document is not suitable for single paragraph conversion, " "main section element not found"
-            )
+                error_exit(error_msg.format("main section element"))
 
         # ANSI Escape Codes
         self.defs = {
@@ -285,6 +284,7 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         self.section_level -= 1
 
     def visit_title(self, node):
+        """ Main title and section titles """
         if not self.beyond_limit:
             self.ensure_eol()
             if self.section_level == 0:
@@ -303,9 +303,13 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             logger.debug("Translated title element to markdown: '{}'".format(node.astext()))
 
     def visit_subtitle(self, node):
-        if isinstance(node.parent, nodes.document):
-            self.visit_docinfo_item(node, 'subtitle')
-            raise SkipNode
+        """ Subtitles in the main document tree """
+        if not self.beyond_limit:
+            if isinstance(node.parent, nodes.document):
+                self.body.append('{} '.format((self.section_level + 1) * '#'))
+                logger.debug("Translated subtitle element to markdown: '{}'".format(node.astext()))
+            else:
+                raise nodes.SkipNode
 
     def visit_UpdateNode(self, node):
         """ Ablog update directive """

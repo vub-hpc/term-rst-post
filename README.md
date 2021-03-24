@@ -12,6 +12,7 @@ Converter of RST documents to text files formatted with markdown and ANSI escape
 * Wrapper of text files that is aware of escape charcaters (``--wrap``)
 * Supported RST elements:
   * title: markdown title plus ANSI bold text
+  * subtitle: markdown title
   * section: markdown paragraphs
   * strong: ANSI bold text
   * emphasis: ANSI underline text
