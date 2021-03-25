@@ -40,16 +40,17 @@ from term_rst_post.exit import error_exit
 logger = logging.getLogger()
 
 
-def accomodate_motd(motd_dir, body_file, head_file=None, foot_file=None, wrap_width=70):
+def accomodate_motd(motd_dir, body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=70):
     """
     Transform MOTD text file by: wrapping, indenting and adding header/footer
     - motd_dir: (string) path to dir with MOTD messages
     - body_file: (file) text file with MOTD body, it will be updated
     - head_file: (file) text file that will be prepended to body
     - foot_file: (file) text file that will be appended to body
+    - foot_link: (string) URL for an extra link after the body
     - wrap_width: (int) max column width of the text file
     """
-    motd_text = ''
+    motd_text = list()
     motd_parts = [part for part in [head_file, body_file, foot_file] if part]
     logger.debug("Parts included in the MOTD: {}".format(', '.join([part.name for part in motd_parts])))
 
@@ -60,8 +61,18 @@ def accomodate_motd(motd_dir, body_file, head_file=None, foot_file=None, wrap_wi
         except IOError as err:
             error_exit(f"Failed to read text file: '{part.name}'", err)
         else:
-            motd_text += part_text
+            motd_text.append(part_text)
             logger.info(f"Added contents of '{part.name}' to MOTD text file")
+
+    # Inject extra link between body and footer
+    if foot_link:
+        part_link = f"\nMore information in {foot_link}\n"
+        if foot_file:
+            motd_text.insert(-1, part_link)
+        else:
+            motd_text.append(part_link)
+
+    motd_text = ''.join(motd_text)
 
     # Format MOTD text file
     try:

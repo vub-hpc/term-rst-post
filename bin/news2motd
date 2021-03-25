@@ -40,8 +40,8 @@ from datetime import date, datetime
 
 from term_rst_post.ansimotd import accomodate_motd, enable_motd
 from term_rst_post.exit import error_exit
-from term_rst_post.filetools import change_file_extension, fileobj_extension, valid_dirpath
-from term_rst_post.filetools import rst_path_from_html_link
+from term_rst_post.filetools import change_file_extension, direct_path, fileobj_extension, valid_dirpath
+from term_rst_post.filetools import common_path_join, rst_path_from_html_link
 from term_rst_post.newsfeed import get_top_ablog_news, valid_url
 from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
 from term_rst_post.version import VERSION
@@ -51,6 +51,8 @@ DEFAULT_LIFETIME = 48
 MOTD_DATE_FORMAT = '%d/%m/%Y'
 MOTD_CFG = 'user.motd.cfg'
 MOTD_FALLBACK = 'user.motd.normal'
+
+HTML_EXTENSIONS = ['.html', '.HTML', '.htm', '.HTM']
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -81,6 +83,13 @@ def main():
         default=DEFAULT_LIFETIME,
         type=int,
         required=False,
+    )
+    cli.add_argument(
+        '--ablog-url',
+        help='URL to the root directory of Ablog posts',
+        default=None,
+        required=False,
+        type=valid_url,
     )
     cli.add_argument(
         '--motd-dir',
@@ -130,12 +139,12 @@ def main():
 
     # Identify the RST file with the news post
     newspost_ext = fileobj_extension(args.newspost)
-    if newspost_ext in ['.html', '.HTML', '.htm', '.HTM']:
+    if newspost_ext in HTML_EXTENSIONS:
         try:
             # Parse HTML and get MOTD date and file
             motd = get_top_ablog_news(args.newspost)
             # Convert HTML link to absolute local path
-            motd['source'] = rst_path_from_html_link(motd['source'], args.newspost.name)
+            motd['source'] = rst_path_from_html_link(motd['html_link'], args.newspost.name)
         except (AttributeError, FileNotFoundError) as err:
             error_exit(err)
     else:
@@ -144,6 +153,23 @@ def main():
             motd = get_post_info_from_rst(args.newspost)
         except (IndexError, ValueError) as err:
             error_exit(err)
+
+    # Geerate link to HTML page
+    motd['url'] = None
+    if args.ablog_url:
+        try:
+            # 1) try to make link from provided URL and path of RST file
+            post_link_url = common_path_join(args.ablog_url.path, motd['source'])
+            post_link_url = change_file_extension(post_link_url, '', full_path=True)  # remove file extension
+        except ValueError as err:
+            if args.ablog_url.path == '/' and 'html_link' in motd:
+                # 2) alternatively, add link from news feed (if any) to provided URL
+                post_link_url = '/' + direct_path(motd['html_link'])
+            else:
+                error_exit(err)
+
+        motd['url'] = f"{args.ablog_url.scheme}://{args.ablog_url.netloc}{post_link_url}"
+        logger.debug(f"Determined link to news post: '{post_link_url}'")
 
     # Age of MOTD news post
     try:
@@ -164,7 +190,13 @@ def main():
         # Update ANSI text: wrap, indent and add header/footer
         try:
             with open(motd['file'], 'r') as motd_file:
-                accomodate_motd(args.motd_dir, motd_file, head_file=args.motd_header, foot_file=args.motd_footer)
+                accomodate_motd(
+                    args.motd_dir,
+                    motd_file,
+                    head_file=args.motd_header,
+                    foot_file=args.motd_footer,
+                    foot_link=motd['url'],
+                )
         except IOError as err:
             error_exit(f"Failed to read text file: '{motd['file']}'", err)
         else:

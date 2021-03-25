@@ -60,17 +60,37 @@ def fileobj_extension(fileobj):
     return filepath.suffix
 
 
-def change_file_extension(filepath, extension):
+def change_file_extension(filepath, extension, full_path=False):
     """
     Return file name changing its extension
     - filepath: (string) realative or absolute path
     - extension: (string) new extension of file
+    - full_path: (boolean) return full path (True) or file name (False)
     """
     new_filepath = Path(filepath).with_suffix(extension)
 
-    logger.debug(f"File name '{new_filepath.name}' with extension '{extension}' generated from path '{filepath}'")
+    if not full_path:
+        new_filepath = new_filepath.name
 
-    return new_filepath.name
+    logger.debug(f"File path '{new_filepath}' with extension '{extension}' generated from path '{filepath}'")
+
+    return new_filepath
+
+
+def direct_path(rel_path):
+    """
+    Return path without special maps
+    - rel_path: (string) realative path
+    """
+    special_maps = ['..', '.', '/']
+
+    rel_path = Path(rel_path)
+    direct_path_parts = [part for part in rel_path.parts if part not in special_maps]
+    direct_path = Path(*direct_path_parts)
+
+    logger.debug(f"Path '{rel_path}' converted to '{direct_path}'")
+
+    return f"{direct_path}"
 
 
 def resolve_path(filepath):
@@ -85,19 +105,41 @@ def resolve_path(filepath):
     return f"{abs_filepath}"
 
 
-def bottom_dir(filepath):
+def common_path_join(left_path, right_path):
     """
-    Return string with name of last dir in the path
-    Only uses path heuristics, avoiding checking the filesystem with is_file() or is_dir()
-    - filepath: (string) realative or absolute path
+    Return path resulting from joining the left and right parts of provided paths
+    at common directory. This directory will be the lowest one in the path.
+    - left_path: (string) realative or absolute path
+    - right_path: (string) realative or absolute path
     """
-    # pathlib ignores trailing slashes, use os.path
-    dirpath = os.path.dirname(filepath)
-    lastdir = os.path.basename(dirpath)
+    left_path = Path(left_path)
+    left_parts = left_path.parts
 
-    logger.debug(f"Last directory in '{filepath}' determined as '{lastdir}'")
+    right_path = Path(right_path)
+    right_parts = right_path.parts
+    if right_path.is_absolute:
+        right_parts = right_parts[1:]  # remove leading slash
 
-    return f"{lastdir}"
+    common_dirs = set(left_parts).intersection(right_parts)
+
+    if len(common_dirs) == 0:
+        path_list = [f"'{path}'" for path in [left_path, right_path]]
+        raise ValueError("Cannot join paths, common directory not found: {}".format(', '.join(path_list)))
+    else:
+        common_dirs_depth = {comdir: left_parts.index(comdir) for comdir in common_dirs}
+        junction_dir = sorted(common_dirs_depth, key=common_dirs_depth.get, reverse=True)[0]
+
+    # Join paths at the junction directory
+    try:
+        left_depth = left_parts.index(junction_dir)
+        right_depth = right_parts.index(junction_dir)
+    except ValueError:
+        raise ValueError(f"Cannot join paths, junction directory '{junction_dir}' not found")
+    else:
+        joined_path = Path(*left_parts[:left_depth], *right_parts[right_depth:])
+        logger.debug(f"Paths joined at common directory '{junction_dir}': '{joined_path}'")
+
+    return f"{joined_path}"
 
 
 def rst_path_from_html_link(html_link, html_file):
@@ -107,8 +149,7 @@ def rst_path_from_html_link(html_link, html_file):
     - html_file: (string) path to HTML file
     """
     # Remove special maps from HTML link
-    html_link_parts = [part for part in Path(html_link).parts if part not in ['..', '.', '/']]
-    html_link = Path(*html_link_parts)
+    html_link = Path(direct_path(html_link))
     # Absolute path to HTML file
     html_file = Path(html_file).resolve()
 

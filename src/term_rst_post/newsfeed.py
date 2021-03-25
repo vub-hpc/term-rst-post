@@ -29,13 +29,39 @@ Parser of Ablog feeds in HTML format.
 @author: Alex Domingo (Vrije Universiteit Brussel)
 """
 
+import argparse
 import logging
 
 from bs4 import BeautifulSoup
+from urllib.parse import urlsplit, urlunsplit
 
 from term_rst_post.exit import error_exit
 
 logger = logging.getLogger()
+
+
+def valid_url(url):
+    """
+    Validate URL passed through argparse
+    URL will be structured as <scheme>://<netloc>/<path>?<query>#<fragment>
+    - url: (string) URL
+    """
+    try:
+        parsed_url = urlsplit(url)
+    except ValueError as err:
+        errmsg = f"Invalid URL '{url}': {err}"
+        raise argparse.ArgumentTypeError(errmsg)
+    else:
+        # Fill in the URL path if empty
+        if not parsed_url.path:
+            pathed_url = urlunsplit(parsed_url[:2] + ('/', '', ''))
+            parsed_url = urlsplit(pathed_url)
+        # Require scheme and netloc
+        if parsed_url.scheme and parsed_url.netloc:
+            return parsed_url
+        else:
+            errmsg = f"Malformed URL '{url}': protocol and/or domain missing"
+            raise argparse.ArgumentTypeError(errmsg)
 
 
 def get_top_ablog_news(newslist):
@@ -58,7 +84,7 @@ def get_top_ablog_news(newslist):
         motd_tag = soup.find('h2')
         motd = {
             'title': motd_tag.a.string,
-            'source': motd_tag.a['href'],
+            'html_link': motd_tag.a['href'],
             'date': motd_tag.parent.find('li').i.next_sibling.strip(),
         }
     except AttributeError:
