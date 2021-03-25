@@ -45,20 +45,6 @@ def test_valid_dirpath(tmpdir):
     assert filetools.valid_dirpath(tmpdir) == f"{tmpdir}"
 
 
-@pytest.mark.parametrize(
-    'test_urlpath',
-    [
-        ('/root/ablog/index.html', 'ablog'),
-        ('/root/ablog/', 'ablog'),
-        ('/root/ablog', 'root'),
-        ('/', ''),
-    ],
-)
-def test_bottom_dir(test_urlpath):
-    example_path, reference_path = test_urlpath
-    assert filetools.bottom_dir(example_path) == reference_path
-
-
 def test_resolve_path(tmpdir):
     test_filename = 'resolve.test'
     test_abspath = os.path.join(tmpdir, test_filename)
@@ -67,15 +53,71 @@ def test_resolve_path(tmpdir):
     assert filetools.resolve_path(test_filename) == test_abspath
 
 
-def test_change_file_extension(ablog_newspost_file):
-    html_file_reference = os.path.basename(ablog_newspost_file).split('.')[0] + '.html'
-    html_file = filetools.change_file_extension(ablog_newspost_file, '.html')
-    assert f"{html_file}" == html_file_reference
+@pytest.mark.parametrize(
+    'test_link',
+    [
+        ('../../test/file', 'test/file'),
+        ('./test/file', 'test/file'),
+        ('/test', 'test'),
+        ('.././../test', 'test'),
+    ],
+)
+def test_direct_path(test_link):
+    example_link, reference_path = test_link
+    test_path = filetools.direct_path(example_link)
+    assert test_path == reference_path
+
+
+def test_change_file_extension(tmpdir, ablog_newspost_file):
+    test_path = os.path.join(tmpdir, ablog_newspost_file)
+    test_html = filetools.change_file_extension(test_path, '.html')
+
+    reference_html = os.path.basename(test_path).split('.')[0] + '.html'
+
+    assert f"{test_html}" == reference_html
+
+
+def test_change_file_extension_fullpath(tmpdir, ablog_newspost_file):
+    test_path = os.path.join(tmpdir, ablog_newspost_file)
+    test_html = filetools.change_file_extension(test_path, '.html', True)
+
+    reference_html = test_path.split('.')[0] + '.html'
+
+    assert f"{test_html}" == reference_html
 
 
 def test_fileobj_extension(ablog_newspost_file):
     with open(ablog_newspost_file) as testfile:
         assert filetools.fileobj_extension(testfile) == '.rst'
+
+
+@pytest.mark.parametrize(
+    'test_joinable_paths',
+    [
+        ('apple/pear', 'apple/pear/test.rst', 'apple/pear/test.rst'),
+        ('apple/pear', 'banana/apple/pear/test.rst', 'apple/pear/test.rst'),
+        ('apple/pear', 'apple/pear/grape/test.rst', 'apple/pear/grape/test.rst'),
+        ('apple/pear', 'banana/apple/pear/grape/test.rst', 'apple/pear/grape/test.rst'),
+        ('apple/pear/orange', 'apple/pear/test.rst', 'apple/pear/test.rst'),
+        ('apple/pear/orange', 'banana/apple/pear/test.rst', 'apple/pear/test.rst'),
+        ('apple/pear/orange', 'apple/pear/grape/test.rst', 'apple/pear/grape/test.rst'),
+        ('apple/pear/orange', 'banana/apple/pear/grape/test.rst', 'apple/pear/grape/test.rst'),
+        ('cherry/apple/pear/orange', 'apple/pear/test.rst', 'cherry/apple/pear/test.rst'),
+        ('cherry/apple/pear/orange', 'banana/apple/pear/test.rst', 'cherry/apple/pear/test.rst'),
+        ('cherry/apple/pear/orange', 'apple/pear/grape/test.rst', 'cherry/apple/pear/grape/test.rst'),
+        ('cherry/apple/pear/orange', 'banana/apple/pear/grape/test.rst', 'cherry/apple/pear/grape/test.rst'),
+        ('cherry/apple/pear/orange', 'apple/kiwi/pear/test.rst', 'cherry/apple/pear/test.rst'),
+        ('cherry/apple/pear/orange', 'banana/apple/kiwi/pear/test.rst', 'cherry/apple/pear/test.rst'),
+        ('cherry/apple/pear/orange', 'apple/kiwi/pear/grape/test.rst', 'cherry/apple/pear/grape/test.rst'),
+        ('cherry/apple/pear/orange', 'banana/apple/kiwi/pear/grape/test.rst', 'cherry/apple/pear/grape/test.rst'),
+        ('apple/pear/index.html', 'apple/pear/grape/test.rst', 'apple/pear/grape/test.rst'),
+        ('cherry/apple/pear/orange/index.html', 'banana/apple/pear/grape/test.rst', 'cherry/apple/pear/grape/test.rst'),
+    ],
+)
+def test_common_path_join(test_joinable_paths):
+    left_path, right_path, reference_path = test_joinable_paths
+    test_join_path = filetools.common_path_join(left_path, right_path)
+    assert test_join_path == reference_path
 
 
 def test_rst_path_from_html_link(tmpdir, ablog_newspost_file):
@@ -92,4 +134,3 @@ def test_rst_path_from_html_link(tmpdir, ablog_newspost_file):
     reference_rst = os.path.join(tmpexample, os.path.basename(ablog_newspost_file))
 
     assert f"{rst_file}" == reference_rst
-

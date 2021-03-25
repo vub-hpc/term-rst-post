@@ -35,11 +35,25 @@ import pytest
 from term_rst_post import newsfeed
 
 
+@pytest.mark.parametrize(
+    'test_url',
+    [
+        ('http://example.com/index.html', 'http://example.com/index.html'),
+        ('http://example.com/', 'http://example.com/'),
+        ('http://example.com', 'http://example.com/'),
+    ],
+)
+def test_valid_url(test_url):
+    example_url, reference_url = test_url
+    parsed_url = newsfeed.valid_url(example_url)
+    assert parsed_url.geturl() == reference_url
+
+
 def test_get_top_ablog_news(exampledir):
     reference_result = {
         'title': 'Test news item',
         'date': '01/01/2021',
-        'source': '../../../news/2021/test/',
+        'html_link': '../../../news/2021/test/',
     }
 
     example_newsfeed = os.path.join(exampledir, 'ablog_newsfeed.html')

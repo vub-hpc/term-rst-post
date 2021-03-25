@@ -66,6 +66,21 @@ def wrap_headfoot_text(refdir):
     return os.path.join(refdir, 'ablog_motd_wrapped_headfoot.ansi')
 
 
+@pytest.fixture
+def wrap_indent_url_text(refdir):
+    return os.path.join(refdir, 'ablog_motd_wrapped_indented_url.ansi')
+
+
+@pytest.fixture
+def wrap_headfoot_url_text(refdir):
+    return os.path.join(refdir, 'ablog_motd_wrapped_headfoot_url.ansi')
+
+
+@pytest.fixture
+def test_url():
+    return 'https://example.com/posts/year/test'
+
+
 def test_wrap_ansicode(unwrap_text, wrap_text):
 
     with open(unwrap_text, 'r') as testfile:
@@ -110,6 +125,40 @@ def test_accomodate_motd_head_foot(tmpdir, unwrap_text, head_text, foot_text, wr
                 test_motd = testfile.read()
 
     with open(wrap_headfoot_text, 'r') as reffile:
+        reference_motd = reffile.read()
+
+    assert test_motd == reference_motd
+
+
+def test_accomodate_motd_url(tmpdir, unwrap_text, wrap_indent_url_text, test_url):
+    # Copy input text to tmpdir to avoid updating file in example dir
+    test_filepath = os.path.join(tmpdir, os.path.basename(unwrap_text))
+    shutil.copy(unwrap_text, test_filepath)
+
+    with open(test_filepath, 'r') as testfile:
+        ansimotd.accomodate_motd(tmpdir, testfile, foot_link=test_url)
+        testfile.seek(0)
+        test_motd = testfile.read()
+
+    with open(wrap_indent_url_text, 'r') as reffile:
+        reference_motd = reffile.read()
+
+    assert test_motd == reference_motd
+
+
+def test_accomodate_motd_head_foot_url(tmpdir, unwrap_text, head_text, foot_text, wrap_headfoot_url_text, test_url):
+    # Copy input text to tmpdir to avoid updating file in example dir
+    test_filepath = os.path.join(tmpdir, os.path.basename(unwrap_text))
+    shutil.copy(unwrap_text, test_filepath)
+
+    with open(test_filepath, 'r') as testfile:
+        with open(head_text, 'r') as headfile:
+            with open(foot_text, 'r') as footfile:
+                ansimotd.accomodate_motd(tmpdir, testfile, head_file=headfile, foot_file=footfile, foot_link=test_url)
+                testfile.seek(0)
+                test_motd = testfile.read()
+
+    with open(wrap_headfoot_url_text, 'r') as reffile:
         reference_motd = reffile.read()
 
     assert test_motd == reference_motd
