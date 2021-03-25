@@ -40,8 +40,9 @@ from datetime import date, datetime
 
 from term_rst_post.ansimotd import accomodate_motd, enable_motd
 from term_rst_post.exit import error_exit
-from term_rst_post.filetools import change_file_extension, fileobj_extension, rst_path_from_html_link, valid_dirpath
-from term_rst_post.newsfeed import get_top_ablog_news
+from term_rst_post.filetools import change_file_extension, fileobj_extension, valid_dirpath
+from term_rst_post.filetools import rst_path_from_html_link
+from term_rst_post.newsfeed import get_top_ablog_news, valid_url
 from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
 from term_rst_post.version import VERSION
 
@@ -82,29 +83,22 @@ def main():
         required=False,
     )
     cli.add_argument(
-        '--ablog-dir',
-        help='path to Ablog root directory with news posts in RST format',
-        default=None,
-        required=False,
-        type=valid_dirpath,
-    )
-    cli.add_argument(
         '--motd-dir',
-        help='path to directory with MOTD text messages (default: CWD)',
+        help='local path to directory with MOTD text messages (default: CWD)',
         default=os.getcwd(),
         required=False,
         type=valid_dirpath,
     )
     cli.add_argument(
         '--motd-header',
-        help='path to file to prepend to MOTD text messages (default: None)',
+        help='local path to file to prepend to MOTD text messages (default: None)',
         default=None,
         required=False,
         type=argparse.FileType('r', encoding='UTF-8'),
     )
     cli.add_argument(
         '--motd-footer',
-        help='path to file to append to MOTD text messages (default: None)',
+        help='local path to file to append to MOTD text messages (default: None)',
         default=None,
         required=False,
         type=argparse.FileType('r', encoding='UTF-8'),
@@ -125,7 +119,7 @@ def main():
     )
     cli.add_argument(
         'newspost',
-        help='RST file with Ablog news post or HTML file with Ablog news feed',
+        help='local RST file with Ablog news post or HTML file with Ablog news feed',
         type=argparse.FileType('r', encoding='UTF-8'),
     )
     args = cli.parse_args()
@@ -137,16 +131,13 @@ def main():
     # Identify the RST file with the news post
     newspost_ext = fileobj_extension(args.newspost)
     if newspost_ext in ['.html', '.HTML', '.htm', '.HTM']:
-        if args.ablog_dir:
-            try:
-                # Parse HTML and get MOTD date and file
-                motd = get_top_ablog_news(args.newspost)
-                # Convert HTML link to absolute path
-                motd['source'] = rst_path_from_html_link(motd['source'], args.ablog_dir)
-            except (AttributeError, FileNotFoundError) as err:
-                error_exit(err)
-        else:
-            error_exit("Parsing HTML news feed requires defining the root directory of Ablog (--ablog-dir)")
+        try:
+            # Parse HTML and get MOTD date and file
+            motd = get_top_ablog_news(args.newspost)
+            # Convert HTML link to absolute local path
+            motd['source'] = rst_path_from_html_link(motd['source'], args.newspost.name)
+        except (AttributeError, FileNotFoundError) as err:
+            error_exit(err)
     else:
         try:
             # Parse RST and get MOTD date

@@ -85,19 +85,47 @@ def resolve_path(filepath):
     return f"{abs_filepath}"
 
 
-def rst_path_from_html_link(link_path, root_path):
+def bottom_dir(filepath):
     """
-    Generate absolute path from relative link
-    - link_path: (string) relative link from HTML document
-    - root_dir: (string) path to root directory of news posts in RST format
+    Return string with name of last dir in the path
+    Only uses path heuristics, avoiding checking the filesystem with is_file() or is_dir()
+    - filepath: (string) realative or absolute path
     """
-    html_link = Path(link_path)
-    rst_root = Path(root_path)
+    # pathlib ignores trailing slashes, use os.path
+    dirpath = os.path.dirname(filepath)
+    lastdir = os.path.basename(dirpath)
 
-    # Make tentative paths to RST file in provided root directory
-    root_level = html_link.parts.index(rst_root.name) + 1
-    rst_path = Path(root_path, *html_link.parts[root_level:])
+    logger.debug(f"Last directory in '{filepath}' determined as '{lastdir}'")
+
+    return f"{lastdir}"
+
+
+def rst_path_from_html_link(html_link, html_file):
+    """
+    Find path to RST file from the link to the corresponding HTML document
+    - html_link: (string) link from HTML document
+    - html_file: (string) path to HTML file
+    """
+    # Remove special maps from HTML link
+    html_link_parts = [part for part in Path(html_link).parts if part not in ['..', '.', '/']]
+    html_link = Path(*html_link_parts)
+    # Absolute path to HTML file
+    html_file = Path(html_file).resolve()
+
+    # Determine path to root directory holding the RST posts
+    try:
+        # HTML pages are located under '_website'
+        root_level = html_file.parts.index('_website')
+    except ValueError:
+        raise FileNotFoundError(f"Missing '_website' directory, cannot find RST file from HTML link")
+    else:
+        rst_root = Path(*html_file.parts[:root_level])
+
+    # Tentative local paths to RST file following HTML link directory structure
+    rst_path = rst_root.joinpath(html_link)
     rst_targets = (rst_path, rst_path.with_suffix('.rst'))
+    print(rst_targets)
+    logger.debug("Tentative paths to RST files: {}".format(','.join([f"'{path}'" for path in rst_targets])))
 
     rst_file = None
 
@@ -105,10 +133,10 @@ def rst_path_from_html_link(link_path, root_path):
         try:
             rst_file = target.resolve(strict=True)
         except FileNotFoundError:
-            logger.debug("Tentative RST file not found: '{}'".format(target))
+            logger.debug(f"Tentative RST file not found: '{target}'")
 
     if rst_file and rst_file.is_file():
-        logger.debug("Found RST file: '{}'".format(rst_file))
+        logger.debug(f"Found RST file: '{rst_file}'")
         return f"{rst_file}"
     else:
         raise FileNotFoundError(f"Could not find RST file '{html_link.name}' in '{rst_root}'")

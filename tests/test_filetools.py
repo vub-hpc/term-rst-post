@@ -31,6 +31,7 @@ Unit tests for term_rst_post.filetools
 
 import os
 import pytest
+import shutil
 
 from term_rst_post import filetools
 
@@ -42,6 +43,20 @@ def ablog_newspost_file(exampledir):
 
 def test_valid_dirpath(tmpdir):
     assert filetools.valid_dirpath(tmpdir) == f"{tmpdir}"
+
+
+@pytest.mark.parametrize(
+    'test_urlpath',
+    [
+        ('/root/ablog/index.html', 'ablog'),
+        ('/root/ablog/', 'ablog'),
+        ('/root/ablog', 'root'),
+        ('/', ''),
+    ],
+)
+def test_bottom_dir(test_urlpath):
+    example_path, reference_path = test_urlpath
+    assert filetools.bottom_dir(example_path) == reference_path
 
 
 def test_resolve_path(tmpdir):
@@ -63,7 +78,18 @@ def test_fileobj_extension(ablog_newspost_file):
         assert filetools.fileobj_extension(testfile) == '.rst'
 
 
-def test_rst_path_from_html_link(ablog_newspost_file, exampledir):
+def test_rst_path_from_html_link(tmpdir, ablog_newspost_file):
+    # Copy RST to temp dir
+    tmpexample = os.path.join(tmpdir, 'examples')
+    os.makedirs(tmpexample)
+    shutil.copy(ablog_newspost_file, tmpexample)
+
+    # Locate RST from HTML link
     html_link = '../../examples/ablog_newspost_simple'
-    rst_file = filetools.rst_path_from_html_link(html_link, exampledir)
-    assert ablog_newspost_file == f"{rst_file}"
+    html_file = os.path.join(tmpdir, '_website', 'examples', 'ablog_newsfeed.html')
+    rst_file = filetools.rst_path_from_html_link(html_link, html_file)
+
+    reference_rst = os.path.join(tmpexample, os.path.basename(ablog_newspost_file))
+
+    assert f"{rst_file}" == reference_rst
+
