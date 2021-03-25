@@ -24,7 +24,7 @@
 #
 ##
 """
-Parser of Ablog feeds in HTML format.
+Parser of ABlog feeds in HTML format.
 
 @author: Alex Domingo (Vrije Universiteit Brussel)
 """
@@ -66,7 +66,7 @@ def valid_url(url):
 
 def get_top_ablog_news(newslist):
     """
-    Parse list of news in Ablog feed and retrieve top item's date and file path
+    Parse list of news in ABlog feed and retrieve top item's date and file path
     News items are identified by their H2 element
     - newslist: (file) HTML document
     """
@@ -88,7 +88,7 @@ def get_top_ablog_news(newslist):
             'date': motd_tag.parent.find('li').i.next_sibling.strip(),
         }
     except AttributeError:
-        raise AttributeError(f"Malformed HTML newsfeed from Ablog, missing news header (H2): '{newslist.name}'")
+        raise AttributeError(f"Malformed HTML newsfeed from ABlog, missing news header (H2): '{newslist.name}'")
     else:
         logger.info("Found MOTD news entry from {}: '{}'".format(motd['date'], motd['title']))
 

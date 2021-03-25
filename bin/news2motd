@@ -25,8 +25,8 @@
 #
 ##
 """
-Read a news item from Ablog and convert it to text file using ANSI escape code
-News can be retrieved from Ablog feed in HTML format or directly from document in RST format
+Read a news item from ABlog and convert it to text file using ANSI escape code
+News can be retrieved from ABlog feed in HTML format or directly from document in RST format
 MOTD can be modified with header and/or footer parts
 
 @author: Alex Domingo (Vrije Universiteit Brussel)
@@ -66,7 +66,7 @@ def main():
     # Parse command line arguments
     cli = argparse.ArgumentParser(
         prog='news2motd',
-        description='Format Ablog news post to text format with ANSI escape codes.',
+        description='Format ABlog news post to text format with ANSI escape codes.',
     )
     cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
     cli.add_argument('-d', '--debug', help='Debug verbosity', action='store_true', required=False)
@@ -86,7 +86,7 @@ def main():
     )
     cli.add_argument(
         '--ablog-url',
-        help='URL to the root directory of Ablog posts',
+        help='URL to the root directory of ABlog posts',
         default=None,
         required=False,
         type=valid_url,
@@ -128,7 +128,7 @@ def main():
     )
     cli.add_argument(
         'newspost',
-        help='local RST file with Ablog news post or HTML file with Ablog news feed',
+        help='local RST file with ABlog news post or HTML file with ABlog news feed',
         type=argparse.FileType('r', encoding='UTF-8'),
     )
     args = cli.parse_args()

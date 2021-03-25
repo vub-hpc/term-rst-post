@@ -24,15 +24,15 @@ Converter of RST documents to text files formatted with markdown and ANSI escape
   * ``|Warning|``: ANSI red background
   * ``|Info|``: ANSI green background
   * other subsitutions will be converted to plain text
-* Support for Ablog's update directive
+* Support for ABlog's update directive
 
 ### news2motd
 
-Parse post documents from Ablog and convert to a text file to be used as *message of the day* (MOTD).
+Parse post documents from ABlog and convert to a text file to be used as *message of the day* (MOTD).
 
 * Same features as ``rst2ansi``
-* Convert any RST file with a post from Ablog to text format using ANSI escape codes
-* Optionally, parse an HTML file with a feed of posts from Ablog and retrieve a certain post item RST document
+* Convert any RST file with a post from ABlog to text format using ANSI escape codes
+* Optionally, parse an HTML file with a feed of posts from ABlog and retrieve a certain post item RST document
 * Use the publication date of the post to determine if the post is worth being published as MOTD (``--lifespan``)
 * Add additional header or footer sections to the text file (``--motd-header``, ``--motd-footer``)
 * Configure the active MOTD

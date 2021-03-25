@@ -312,7 +312,7 @@ class ANSICodeTranslator(nodes.NodeVisitor):
                 raise nodes.SkipNode
 
     def visit_UpdateNode(self, node):
-        """ Ablog update directive """
+        """ ABlog update directive """
         if not self.beyond_limit:
             self.body.append(
                 '\n{0} Update {1} {2}'.format(
@@ -323,10 +323,10 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             )
 
     def depart_UpdateNode(self, node):
-        """ Ablog update directive """
+        """ ABlog update directive """
         if not self.beyond_limit:
             self.body.append('\n')
-            logger.debug("Translated Ablog update directive to ANSICode: '{}'".format(node.astext()))
+            logger.debug("Translated ABlog update directive to ANSICode: '{}'".format(node.astext()))
 
     def visit_transition(self, node):
         """Replace a transition by a horizontal rule"""
