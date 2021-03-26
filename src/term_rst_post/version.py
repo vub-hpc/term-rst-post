@@ -29,4 +29,4 @@ Version of term_rst_post
 @author: Alex Domingo (Vrije Universiteit Brussel)
 """
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
