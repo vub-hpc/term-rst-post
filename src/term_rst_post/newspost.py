@@ -34,7 +34,7 @@ Supported substitutions: |Warning|, |Info|
 import logging
 
 from ablog.post import UpdateDirective
-from docutils import core, frontend, languages, nodes, parsers, readers, transforms, utils, writers
+from docutils import core, languages, nodes, parsers, readers, transforms, writers
 
 from term_rst_post.exit import error_exit
 from term_rst_post.filetools import resolve_path
