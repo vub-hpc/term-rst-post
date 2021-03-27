@@ -82,7 +82,7 @@ def accomodate_motd(motd_dir, body_file, head_file=None, foot_file=None, foot_li
             for n, line in enumerate(motd_lines):
                 motd_lines[n : n + 1] = wrap_ansicode(line, wrap_width, 5)
             # Indent with two spaces
-            motd_lines = [indent(l, '  ') for l in motd_lines]
+            motd_lines = [indent(line, '  ') for line in motd_lines]
             motd_file.write('\n'.join(motd_lines) + '\n')
     except IOError as err:
         error_exit(f"Failed to open ANSI text file to update its contents: '{body_file.name}'", err)
