@@ -41,10 +41,10 @@ Parse post documents from ABlog and convert to a text file to be used as *messag
 
 ## Requirements
 
-* Python +3.8
-* docutils
+* Python >=3.6
+* ablog >=0.10.0
 * sphinx
-* ablog
+* docutils
 * beautifulsoup4
 * (tests) pytest
 
