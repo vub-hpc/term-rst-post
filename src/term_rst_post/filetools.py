@@ -160,7 +160,8 @@ def rst_path_from_html_link(html_link, html_file):
         # HTML pages are located in ABLOG_HTML_DIR
         root_level = html_file.parts.index(ABLOG_HTML_DIR)
     except ValueError:
-        raise FileNotFoundError(f"Missing '{ABLOG_HTML_DIR}' directory, cannot find RST file from HTML link")
+        logger.warning(f"Missing '{ABLOG_HTML_DIR}' directory, searching RST file from current working directory")
+        rst_root = Path.cwd()
     else:
         rst_root = Path(*html_file.parts[:root_level])
 
