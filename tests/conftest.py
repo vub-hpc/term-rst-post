@@ -32,15 +32,17 @@ Unit tests configuration file
 import os
 import pytest
 
+
 @pytest.fixture
 def rootdir():
     return os.path.dirname(os.path.abspath(__file__))
+
 
 @pytest.fixture
 def exampledir(rootdir):
     return os.path.join(rootdir, 'examples')
 
+
 @pytest.fixture
 def refdir(rootdir):
     return os.path.join(rootdir, 'references')
-
