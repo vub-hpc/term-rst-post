@@ -35,6 +35,8 @@ import os
 
 from pathlib import Path
 
+ABLOG_HTML_DIR = '_website'
+
 logger = logging.getLogger()
 
 
@@ -155,10 +157,10 @@ def rst_path_from_html_link(html_link, html_file):
 
     # Determine path to root directory holding the RST posts
     try:
-        # HTML pages are located under '_website'
-        root_level = html_file.parts.index('_website')
+        # HTML pages are located in ABLOG_HTML_DIR
+        root_level = html_file.parts.index(ABLOG_HTML_DIR)
     except ValueError:
-        raise FileNotFoundError("Missing '_website' directory, cannot find RST file from HTML link")
+        raise FileNotFoundError(f"Missing '{ABLOG_HTML_DIR}' directory, cannot find RST file from HTML link")
     else:
         rst_root = Path(*html_file.parts[:root_level])
 
