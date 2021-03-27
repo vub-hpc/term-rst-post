@@ -158,7 +158,7 @@ def rst_path_from_html_link(html_link, html_file):
         # HTML pages are located under '_website'
         root_level = html_file.parts.index('_website')
     except ValueError:
-        raise FileNotFoundError(f"Missing '_website' directory, cannot find RST file from HTML link")
+        raise FileNotFoundError("Missing '_website' directory, cannot find RST file from HTML link")
     else:
         rst_root = Path(*html_file.parts[:root_level])
 
