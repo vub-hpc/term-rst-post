@@ -9,7 +9,7 @@ Convert documents in reStructuredText (RST) to text files suitable to be display
 Converter of RST documents to text files formatted with markdown and ANSI escape codes
 
 * Custom docutils *translator* to text files with ANSI escape codes
-* Wrapper of text files that is aware of escape charcaters (``--wrap``)
+* Wrapper of text files that is aware of escape characters (``--wrap``)
 * Supported RST elements:
   * title: markdown title plus ANSI bold text
   * subtitle: markdown title
@@ -18,12 +18,12 @@ Converter of RST documents to text files formatted with markdown and ANSI escape
   * emphasis: ANSI underline text
   * literal: markdown literal plus ANSI inverse text
   * reference: markdown links
-  * bulletr list: markdown unordered list
+  * bullet list: markdown unordered list
   * enumerated list: markdown unordered list
 * Support for custom substitutions:
   * ``|Warning|``: ANSI red background
   * ``|Info|``: ANSI green background
-  * other subsitutions will be converted to plain text
+  * other substitutions will be converted to plain text
 * Support for ABlog's update directive
 
 ### news2motd
@@ -56,7 +56,7 @@ The following command will convert the [example RST file with all supported elem
 $ rst2ansi tests/examples/ablog_newspost_complete.rst
 ```
 
-The following example generates a brief MOTD from some news feed of ABlog and adds an extra header, footer and link. In this case the root directory with RST files will be automatiaclly determined from the news feed HTML file. The command defines the root directory of MOTD text files as ``motd``. The location of the header and footer files can be anywehre else.
+The following example generates a brief MOTD from some news feed of ABlog and adds an extra header, footer and link. In this case the root directory with RST files will be automatically determined from the news feed HTML file. The command defines the root directory of MOTD text files as ``motd``. The location of the header and footer files can be anywhere else.
 
 ```
 $ news2motd posts/tag/motd/index.html
