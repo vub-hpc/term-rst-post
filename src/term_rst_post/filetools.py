@@ -165,7 +165,6 @@ def rst_path_from_html_link(html_link, html_file):
     # Tentative local paths to RST file following HTML link directory structure
     rst_path = rst_root.joinpath(html_link)
     rst_targets = (rst_path, rst_path.with_suffix('.rst'))
-    print(rst_targets)
     logger.debug("Tentative paths to RST files: {}".format(','.join([f"'{path}'" for path in rst_targets])))
 
     rst_file = None
