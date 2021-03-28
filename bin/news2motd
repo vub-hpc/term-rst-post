@@ -208,7 +208,7 @@ def main():
 
     # Enable MOTD
     motd_cfg_file = os.path.join(args.motd_dir, args.motd_cfg)
-    enable_motd(args.motd_cfg, motd['file'])
+    enable_motd(motd_cfg_file, motd['file'])
 
     logger.info("Successfully enabled MOTD in '{}'".format(motd['file']))
 
