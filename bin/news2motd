@@ -210,7 +210,7 @@ def main():
     motd_cfg_file = os.path.join(args.motd_dir, args.motd_cfg)
     enable_motd(args.motd_cfg, motd['file'])
 
-    logger.info("Successfully enabled MOTD in file: '{}'".format(motd['file']))
+    logger.info("Successfully enabled MOTD in '{}'".format(motd['file']))
 
 
 if __name__ == "__main__":
