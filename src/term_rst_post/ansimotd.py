@@ -92,24 +92,6 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
     return motd_file
 
 
-def enable_motd(motd_cfg, motd_file):
-    """
-    Enable MOTD message
-    - motd_cfg: (string) path to config file in MOTD directory
-    - motd_file: (string) path to MOTD message
-    """
-    motd_filename = os.path.basename(motd_file)
-
-    try:
-        with open(motd_cfg, 'w') as cfgfile:
-            cfgfile.write(f'{motd_filename}')
-    except IOError as err:
-        error_exit("Failed to write MOTD configuration file: '{}'".format(motd_cfg), err)
-    else:
-        logger.debug("Modified MOTD configuration file: '{}'".format(motd_cfg))
-        cfgfile.close()
-
-
 def wrap_ansicode(ansistr, column_width, match_width):
     """
     Cuts long string to column width accounting for ANSI escape code

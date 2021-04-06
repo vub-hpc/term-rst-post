@@ -38,7 +38,7 @@ import os
 
 from datetime import date, datetime
 
-from term_rst_post.ansimotd import accomodate_motd, enable_motd
+from term_rst_post.ansimotd import accomodate_motd
 from term_rst_post.exit import error_exit
 from term_rst_post.filetools import change_file_extension, fileobj_extension, inward_path, valid_dirpath
 from term_rst_post.filetools import common_path_join, rst_path_from_html_link
@@ -50,8 +50,8 @@ from term_rst_post.version import VERSION
 DEFAULT_LIFETIME = 48
 
 MOTD_DATE_FORMAT = '%d/%m/%Y'
-MOTD_CFG = 'user.motd.cfg'
-MOTD_FALLBACK = 'user.motd.normal'
+MOTD_PATH = 'news.motd'
+MOTD_FALLBACK = 'fallback.motd'
 
 HTML_EXTENSIONS = ['.html', '.HTML', '.htm', '.HTM']
 
@@ -93,11 +93,18 @@ def main():
         type=valid_url,
     )
     cli.add_argument(
-        '--motd-dir',
-        help='local path to directory with MOTD text messages (default: CWD)',
-        default=os.getcwd(),
+        '--motd-path',
+        help='local path to file with MOTD text message (default: {MOTD_PATH})',
+        default=MOTD_PATH,
         required=False,
-        type=valid_dirpath,
+        type=argparse.FileType('x', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-fallback',
+        help=f'local path to fallback text message for MOTD (default: {MOTD_FALLBACK})',
+        default=MOTD_FALLBACK,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
     )
     cli.add_argument(
         '--motd-header',
@@ -112,20 +119,6 @@ def main():
         default=None,
         required=False,
         type=argparse.FileType('r', encoding='UTF-8'),
-    )
-    cli.add_argument(
-        '--motd-cfg',
-        help=f'name of configuration file in MOTD directory (default: {MOTD_CFG})',
-        default=MOTD_CFG,
-        required=False,
-        type=str,
-    )
-    cli.add_argument(
-        '--motd-fallback',
-        help=f'name of file in MOTD directory with fallback text message (default: {MOTD_FALLBACK})',
-        default=MOTD_FALLBACK,
-        required=False,
-        type=str,
     )
     cli.add_argument(
         'newspost',
@@ -185,7 +178,7 @@ def main():
     if motd['age'].total_seconds() < args.lifespan * 3600:
         # Generate new MOTD message for the recent news post
         ansi_file = change_file_extension(motd['source'], '.ansi')
-        motd['file'] = os.path.join(args.motd_dir, f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}")
+        motd['file'] = f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}"
         # Convert RST to ANSI text
         make_ansicode_from_rst(motd['file'], motd['source'], briefing=args.briefing)
         # Update ANSI text: wrap, indent and add header/footer
@@ -203,14 +196,16 @@ def main():
             motd_file.close()
     else:
         # Use fallback MOTD
-        motd['file'] = os.path.join(args.motd_dir, args.motd_fallback)
-        logger.warning(f"MOTD is older than {args.lifespan}h, falling back to default MOTD: '{args.motd_fallback}'")
+        motd['file'] = f"{args.motd_fallback.name}"
+        logger.warning(f"MOTD is older than {args.lifespan}h, falling back to default MOTD: '{args.motd_fallback.name}'")
 
-    # Enable MOTD
-    motd_cfg_file = os.path.join(args.motd_dir, args.motd_cfg)
-    enable_motd(motd_cfg_file, motd['file'])
-
-    logger.info("Successfully enabled MOTD in '{}'".format(motd['file']))
+    try:
+        with open(motd['file'], 'r') as motd_file:
+            args.motd_path.write(motd_file.read())
+    except IOError as err:
+        error_exit(f"Failed to read text file: '{motd['file']}'", err)
+    else:
+        logger.info(f"Successfully generated MOTD in '{args.motd_path.name}'")
 
 
 if __name__ == "__main__":

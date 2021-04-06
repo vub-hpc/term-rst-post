@@ -56,11 +56,11 @@ The following command will convert the [example RST file with all supported elem
 $ rst2ansi tests/examples/ablog_newspost_complete.rst
 ```
 
-The following example generates a brief MOTD from some news feed of ABlog and adds an extra header, footer and link. In this case the root directory with RST files will be automatically determined from the news feed HTML file. The command defines the root directory of MOTD text files as ``motd``. The location of the header and footer files can be anywhere else.
+The following example generates a MOTD considering the given HTML news feed of ABlog. New MOTD will be stored in the default file called ``news.motd``.  Any news item converted to MOTD will have an additional header, footer and link. In this case the root directory with RST files will be automatically determined from the news feed HTML file.
 
 ```
-$ news2motd posts/tag/motd/index.html
-  --briefing --motd-dir motd
+$ news2motd _website/posts/tag/motd/index.html
+  --briefing
   --motd-header motd/_templates/motd-head.ansi
   --motd-footer motd/_templates/motd-foot.ansi
   --ablog-url http://example.com/
