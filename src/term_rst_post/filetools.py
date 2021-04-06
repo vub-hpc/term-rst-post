@@ -65,7 +65,7 @@ def fileobj_extension(fileobj):
 def change_file_extension(filepath, extension, full_path=False):
     """
     Return file name changing its extension
-    - filepath: (string) realative or absolute path
+    - filepath: (string) relative or absolute path
     - extension: (string) new extension of file
     - full_path: (boolean) return full path (True) or file name (False)
     """
@@ -79,26 +79,31 @@ def change_file_extension(filepath, extension, full_path=False):
     return new_filepath
 
 
-def direct_path(rel_path):
+def inward_path(filepath):
     """
-    Return path without special maps
-    - rel_path: (string) realative path
+    Strip any leading special maps from path and return a direct path inwards
+    - filepath: (string) relative or absolute path
     """
     special_maps = ['..', '.', '/']
 
-    rel_path = Path(rel_path)
-    direct_path_parts = [part for part in rel_path.parts if part not in special_maps]
-    direct_path = Path(*direct_path_parts)
+    filepath = Path(filepath)
 
-    logger.debug(f"Path '{rel_path}' converted to '{direct_path}'")
+    inpath_parts = list()
+    for part in filepath.parts:
+        if len(inpath_parts) > 0 or part not in special_maps:
+            inpath_parts.append(part)
 
-    return f"{direct_path}"
+    inpath = Path(*inpath_parts)
+
+    logger.debug(f"Path '{filepath}' converted to '{inpath}'")
+
+    return f"{inpath}"
 
 
 def resolve_path(filepath):
     """
     Return string with absolute path from filepath
-    - filepath: (string) realative or absolute path
+    - filepath: (string) relative or absolute path
     """
     abs_filepath = Path(filepath).resolve()
 
@@ -111,8 +116,8 @@ def common_path_join(left_path, right_path):
     """
     Return path resulting from joining the left and right parts of provided paths
     at common directory. This directory will be the lowest one in the path.
-    - left_path: (string) realative or absolute path
-    - right_path: (string) realative or absolute path
+    - left_path: (string) relative or absolute path
+    - right_path: (string) relative or absolute path
     """
     left_path = Path(left_path)
     left_parts = left_path.parts
@@ -151,7 +156,7 @@ def rst_path_from_html_link(html_link, html_file):
     - html_file: (string) path to HTML file
     """
     # Remove special maps from HTML link
-    html_link = Path(direct_path(html_link))
+    html_link = Path(inward_path(html_link))
     # Absolute path to HTML file
     html_file = Path(html_file).resolve()
 

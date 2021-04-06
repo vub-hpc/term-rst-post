@@ -60,11 +60,13 @@ def test_resolve_path(tmpdir):
         ('./test/file', 'test/file'),
         ('/test', 'test'),
         ('.././../test', 'test'),
+        ('test/../file', 'test/../file'),
+        ('/test/../file', 'test/../file'),
     ],
 )
-def test_direct_path(test_link):
+def test_inward_path(test_link):
     example_link, reference_path = test_link
-    test_path = filetools.direct_path(example_link)
+    test_path = filetools.inward_path(example_link)
     assert test_path == reference_path
 
 

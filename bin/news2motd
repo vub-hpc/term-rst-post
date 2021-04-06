@@ -40,7 +40,7 @@ from datetime import date, datetime
 
 from term_rst_post.ansimotd import accomodate_motd, enable_motd
 from term_rst_post.exit import error_exit
-from term_rst_post.filetools import change_file_extension, direct_path, fileobj_extension, valid_dirpath
+from term_rst_post.filetools import change_file_extension, fileobj_extension, inward_path, valid_dirpath
 from term_rst_post.filetools import common_path_join, rst_path_from_html_link
 from term_rst_post.newsfeed import get_top_ablog_news, valid_url
 from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
@@ -165,7 +165,7 @@ def main():
         except ValueError as err:
             if args.ablog_url.path == '/' and 'html_link' in motd:
                 # 2) alternatively, add link from news feed (if any) to provided URL
-                post_link_url = '/' + direct_path(motd['html_link'])
+                post_link_url = '/' + inward_path(motd['html_link'])
             else:
                 error_exit(err)
 
