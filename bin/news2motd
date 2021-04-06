@@ -155,7 +155,7 @@ def main():
         except (IndexError, ValueError) as err:
             error_exit(err)
 
-    # Geerate link to HTML page
+    # Generate link to HTML page
     motd['url'] = None
     if args.ablog_url:
         try:
