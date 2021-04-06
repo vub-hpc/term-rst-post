@@ -102,7 +102,7 @@ def test_accomodate_motd(tmpdir, unwrap_text, wrap_indent_text):
     shutil.copy(unwrap_text, test_filepath)
 
     with open(test_filepath, 'r') as testfile:
-        ansimotd.accomodate_motd(tmpdir, testfile)
+        ansimotd.accomodate_motd(testfile)
         testfile.seek(0)
         test_motd = testfile.read()
 
@@ -120,7 +120,7 @@ def test_accomodate_motd_head_foot(tmpdir, unwrap_text, head_text, foot_text, wr
     with open(test_filepath, 'r') as testfile:
         with open(head_text, 'r') as headfile:
             with open(foot_text, 'r') as footfile:
-                ansimotd.accomodate_motd(tmpdir, testfile, head_file=headfile, foot_file=footfile)
+                ansimotd.accomodate_motd(testfile, head_file=headfile, foot_file=footfile)
                 testfile.seek(0)
                 test_motd = testfile.read()
 
@@ -136,7 +136,7 @@ def test_accomodate_motd_url(tmpdir, unwrap_text, wrap_indent_url_text, test_url
     shutil.copy(unwrap_text, test_filepath)
 
     with open(test_filepath, 'r') as testfile:
-        ansimotd.accomodate_motd(tmpdir, testfile, foot_link=test_url)
+        ansimotd.accomodate_motd(testfile, foot_link=test_url)
         testfile.seek(0)
         test_motd = testfile.read()
 
@@ -154,7 +154,7 @@ def test_accomodate_motd_head_foot_url(tmpdir, unwrap_text, head_text, foot_text
     with open(test_filepath, 'r') as testfile:
         with open(head_text, 'r') as headfile:
             with open(foot_text, 'r') as footfile:
-                ansimotd.accomodate_motd(tmpdir, testfile, head_file=headfile, foot_file=footfile, foot_link=test_url)
+                ansimotd.accomodate_motd(testfile, head_file=headfile, foot_file=footfile, foot_link=test_url)
                 testfile.seek(0)
                 test_motd = testfile.read()
 

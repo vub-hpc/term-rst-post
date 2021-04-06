@@ -192,7 +192,6 @@ def main():
         try:
             with open(motd['file'], 'r') as motd_file:
                 accomodate_motd(
-                    args.motd_dir,
                     motd_file,
                     head_file=args.motd_header,
                     foot_file=args.motd_footer,

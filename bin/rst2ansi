@@ -82,7 +82,7 @@ def main():
     if args.wrap > 0:
         try:
             with open(ansi_file, 'r') as text_file:
-                accomodate_motd(os.getcwd(), text_file, wrap_width=args.wrap)
+                accomodate_motd(text_file, wrap_width=args.wrap)
         except IOError as err:
             error_exit(f"Failed to open ANSI text file to wrap its contents: '{ansi_file}'", err)
         else:

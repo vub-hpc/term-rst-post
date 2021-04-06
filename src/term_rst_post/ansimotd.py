@@ -40,10 +40,9 @@ from term_rst_post.exit import error_exit
 logger = logging.getLogger()
 
 
-def accomodate_motd(motd_dir, body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=70):
+def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=70):
     """
     Transform MOTD text file by: wrapping, indenting and adding header/footer
-    - motd_dir: (string) path to dir with MOTD messages
     - body_file: (file) text file with MOTD body, it will be updated
     - head_file: (file) text file that will be prepended to body
     - foot_file: (file) text file that will be appended to body
