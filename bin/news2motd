@@ -46,6 +46,7 @@ from term_rst_post.newsfeed import get_top_ablog_news, valid_url
 from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
 from term_rst_post.version import VERSION
 
+# Hours that last news post will be eligible as MOTD (--lifespan)
 DEFAULT_LIFETIME = 48
 
 MOTD_DATE_FORMAT = '%d/%m/%Y'
@@ -79,7 +80,7 @@ def main():
     )
     cli.add_argument(
         '--lifespan',
-        help=f'lifespan in hours of last news posts as MOTD (default: {DEFAULT_LIFETIME} hours)',
+        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours)',
         default=DEFAULT_LIFETIME,
         type=int,
         required=False,
