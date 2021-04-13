@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+#
+# Copyright 2021-2021 Vrije Universiteit Brussel
+#
+# This file is part of term-rst-post,
+# originally created by the HPC team of Vrije Universiteit Brussel (https://hpc.vub.be),
+# with support of Vrije Universiteit Brussel (https://www.vub.be),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
+#
+# https://github.com/vub-hpc/term-rst-post
+#
+# term-rst-post is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v3.
+#
+# term-rst-post is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this code.  If not, see <http://www.gnu.org/licenses/>.
+#
+##
+"""
+Read a news item from ABlog and convert it to text file using ANSI escape code
+News can be retrieved from ABlog feed in HTML format or directly from document in RST format
+MOTD can be modified with header and/or footer parts
+
+@author: Alex Domingo (Vrije Universiteit Brussel)
+"""
+
+import argparse
+import logging
+import os
+
+from datetime import date, datetime
+
+from term_rst_post.ansimotd import accomodate_motd
+from term_rst_post.exit import error_exit
+from term_rst_post.filetools import change_file_extension, fileobj_extension, inward_path, valid_dirpath
+from term_rst_post.filetools import common_path_join, rst_path_from_html_link
+from term_rst_post.newsfeed import get_top_ablog_news, valid_url
+from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
+from term_rst_post.version import VERSION
+
+# Hours that last news post will be eligible as MOTD (--lifespan)
+DEFAULT_LIFETIME = 48
+
+MOTD_DATE_FORMAT = '%d/%m/%Y'
+MOTD_PATH = 'news.motd'
+MOTD_FALLBACK = 'fallback.motd'
+
+HTML_EXTENSIONS = ['.html', '.HTML', '.htm', '.HTM']
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    datefmt='%d-%m-%Y %H:%M:%S',
+    level=logging.INFO,
+)
+logger = logging.getLogger()
+
+
+def main():
+    # Parse command line arguments
+    cli = argparse.ArgumentParser(
+        prog='news2motd',
+        description='Format ABlog news post to text format with ANSI escape codes.',
+    )
+    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
+    cli.add_argument('-d', '--debug', help='Debug verbosity', action='store_true', required=False)
+    cli.add_argument(
+        '--briefing',
+        help=f'limit the MOTD to the first paragraph of the news post (default: False)',
+        default=False,
+        action='store_true',
+        required=False,
+    )
+    cli.add_argument(
+        '--lifespan',
+        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours)',
+        default=DEFAULT_LIFETIME,
+        type=int,
+        required=False,
+    )
+    cli.add_argument(
+        '--ablog-url',
+        help='URL to the root directory of ABlog posts',
+        default=None,
+        required=False,
+        type=valid_url,
+    )
+    cli.add_argument(
+        '--motd-path',
+        help='local path to file with MOTD text message (default: {MOTD_PATH})',
+        default=MOTD_PATH,
+        required=False,
+        type=argparse.FileType('x', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-fallback',
+        help=f'local path to fallback text message for MOTD (default: {MOTD_FALLBACK})',
+        default=MOTD_FALLBACK,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-header',
+        help='local path to file to prepend to MOTD text messages (default: None)',
+        default=None,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--motd-footer',
+        help='local path to file to append to MOTD text messages (default: None)',
+        default=None,
+        required=False,
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        'newspost',
+        help='local RST file with ABlog news post or HTML file with ABlog news feed',
+        type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    args = cli.parse_args()
+
+    # Set log level
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
+    # Identify the RST file with the news post
+    newspost_ext = fileobj_extension(args.newspost)
+    if newspost_ext in HTML_EXTENSIONS:
+        try:
+            # Parse HTML and get MOTD date and file
+            motd = get_top_ablog_news(args.newspost)
+            # Convert HTML link to absolute local path
+            motd['source'] = rst_path_from_html_link(motd['html_link'], args.newspost.name)
+        except (AttributeError, FileNotFoundError) as err:
+            error_exit(err)
+    else:
+        try:
+            # Parse RST and get MOTD date
+            motd = get_post_info_from_rst(args.newspost)
+        except (IndexError, ValueError) as err:
+            error_exit(err)
+
+    # Generate link to HTML page
+    motd['url'] = None
+    if args.ablog_url:
+        try:
+            # 1) try to make link from provided URL and path of RST file
+            post_link_url = common_path_join(args.ablog_url.path, motd['source'])
+            post_link_url = change_file_extension(post_link_url, '', full_path=True)  # remove file extension
+        except ValueError as err:
+            if args.ablog_url.path == '/' and 'html_link' in motd:
+                # 2) alternatively, add link from news feed (if any) to provided URL
+                post_link_url = '/' + inward_path(motd['html_link'])
+            else:
+                error_exit(err)
+
+        motd['url'] = f"{args.ablog_url.scheme}://{args.ablog_url.netloc}{post_link_url}"
+        logger.debug(f"Determined link to news post: '{post_link_url}'")
+
+    # Age of MOTD news post
+    try:
+        motd['date'] = datetime.strptime(motd['date'], MOTD_DATE_FORMAT)
+    except ValueError as err:
+        error_exit("Date of MOTD news entry is malformed: '{}'".format(motd['date']), err)
+    else:
+        motd['age'] = datetime.today() - motd['date']
+        age_hours = motd['age'].total_seconds() / 3600
+        logger.debug(f"News post with MOTD is {age_hours:.1f} hours old")
+
+    if motd['age'].total_seconds() < args.lifespan * 3600:
+        # Generate new MOTD message for the recent news post
+        ansi_file = change_file_extension(motd['source'], '.ansi')
+        motd['file'] = f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}"
+        # Convert RST to ANSI text
+        make_ansicode_from_rst(motd['file'], motd['source'], briefing=args.briefing)
+        # Update ANSI text: wrap, indent and add header/footer
+        try:
+            with open(motd['file'], 'r') as motd_file:
+                accomodate_motd(
+                    motd_file,
+                    head_file=args.motd_header,
+                    foot_file=args.motd_footer,
+                    foot_link=motd['url'],
+                )
+        except IOError as err:
+            error_exit(f"Failed to read text file: '{motd['file']}'", err)
+        else:
+            motd_file.close()
+    else:
+        # Use fallback MOTD
+        motd['file'] = f"{args.motd_fallback.name}"
+        logger.warning(f"MOTD is older than {args.lifespan}h, falling back to default MOTD: '{args.motd_fallback.name}'")
+
+    try:
+        with open(motd['file'], 'r') as motd_file:
+            args.motd_path.write(motd_file.read())
+    except IOError as err:
+        error_exit(f"Failed to read text file: '{motd['file']}'", err)
+    else:
+        logger.info(f"Successfully generated MOTD in '{args.motd_path.name}'")
+
+
+if __name__ == "__main__":
+    main()
