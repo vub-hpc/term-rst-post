@@ -24,7 +24,7 @@ Converter of RST documents to text files formatted with markdown and ANSI escape
   * ``|Warning|``: ANSI red background
   * ``|Info|``: ANSI green background
   * other substitutions will be converted to plain text
-* Support for ABlog's update directive
+* Support for [ABlog's update directive](https://ablog.readthedocs.io/manual/posting-and-listing/#directive-update)
 
 ### news2motd
 
