@@ -79,7 +79,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
             motd_lines = motd_text.splitlines()
             # Wrap text to 70 characters respecting spacings and ANSI escape codes
             for n, line in enumerate(motd_lines):
-                motd_lines[n : n + 1] = wrap_ansicode(line, wrap_width, 5)
+                motd_lines[n : n + 1] = wrap_ansicode(line, wrap_width)
             # Indent with two spaces
             motd_lines = [indent(line, '  ') for line in motd_lines]
             motd_file.write('\n'.join(motd_lines) + '\n')
@@ -92,12 +92,12 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
     return motd_file
 
 
-def wrap_ansicode(ansistr, column_width, match_width):
+def wrap_ansicode(ansistr, column_width, match_width=5):
     """
-    Cuts long string to column width accounting for ANSI escape code
+    Cuts long text in a single string to a fixed column width accounting for ANSI escape code characters
     - ansistr: (str) text with ANSI escape codes
-    - column_width: (int) charcater length of column
-    - match_width: (int) number of charcaters to match between text representation
+    - column_width: (int) length of text column in legible charcaters
+    - match_width: (int) number of characters used to match between the text with/without ANSI escape codes
     """
     # Text without ANSI escape codes
     clearstr = re.sub('\033\[[0-9;]*m', '', ansistr)
@@ -115,12 +115,12 @@ def wrap_ansicode(ansistr, column_width, match_width):
         # Replicate wrapped lines of clear text with ansi string
         ansistr_wrapped = list()
         for line in clearstr_wrapped:
-            # Define range around column width to look for end of line of clearstr in ansistr
-            # 3x match_width to the left and ansicodes to the right
+            # Define zone around end of line at column width of clearstr to find a match point in ansistr
+            # 3x `match_width` to the left and `ansicodes` to the right
             cutleft = column_width - (match_width * 3)
             cutright = column_width + ansicodes
             match_zone = ansistr[cutleft:cutright]
-            # Find the first matching substring
+            # Find the first matching substring between clearstr and ansistr in this zone
             cutpoint = match_zone.find(line[(match_width * -1) :])
             cutpoint = cutleft + match_width + cutpoint
             # Split ansistr in the same point as clearstr

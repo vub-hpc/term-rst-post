@@ -87,7 +87,7 @@ def test_wrap_ansicode(unwrap_text, wrap_text):
         # Wrap text to 70 characters column width
         test_lines = testfile.read().splitlines()
         for n, line in enumerate(test_lines):
-            test_lines[n : n + 1] = ansimotd.wrap_ansicode(line, 70, 5)
+            test_lines[n : n + 1] = ansimotd.wrap_ansicode(line, 70)
         test_motd = '\n'.join(test_lines) + '\n'
 
     with open(wrap_text, 'r') as reffile:
