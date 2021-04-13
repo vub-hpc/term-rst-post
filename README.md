@@ -6,7 +6,7 @@ Convert documents in reStructuredText (RST) to text files suitable to be display
 
 ### rst2ansi
 
-Converter of RST documents to text files formatted with markdown and ANSI escape codes
+Convert RST documents to text files formatted with markdown and ANSI escape codes
 
 * Custom docutils *translator* to text files with ANSI escape codes
 * Wrapper of text files that is aware of escape characters (``--wrap``)
@@ -28,16 +28,15 @@ Converter of RST documents to text files formatted with markdown and ANSI escape
 
 ### news2motd
 
-Parse post documents from ABlog and convert to a text file to be used as *message of the day* (MOTD).
+Parse posts from ABlog and convert them to a text file to be used as *message of the day* (MOTD).
 
-* Same features as ``rst2ansi``
+* Same conversion features of RST documents as ``rst2ansi``
 * Convert any RST file with a post from ABlog to text format using ANSI escape codes
-* Optionally, parse an HTML file with a feed of posts from ABlog and retrieve a certain post item RST document
+* Optionally, parse an HTML file with a feed of posts from ABlog and retrieve the most recent post RST document
 * Use the publication date of the post to determine if the post is worth being published as MOTD (``--lifespan``)
 * Generate brief MOTD with a single paragraph from RST document (``--briefing``)
-* Add additional header or footer sections to the text file (``--motd-header``, ``--motd-footer``)
-* Add additional link in the MOTD to the HTML page of the RST document (``--ablog-url``)
-* Configure the active MOTD
+* Add additional header or footer sections to the MOTD (``--motd-header``, ``--motd-footer``)
+* Add additional link in the MOTD to the HTML page of the post (``--ablog-url``)
 
 ## Requirements
 
