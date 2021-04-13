@@ -62,3 +62,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+
+# Vim
+*.sw[op]
+*~
