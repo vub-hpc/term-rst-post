@@ -94,7 +94,7 @@ def main():
     )
     cli.add_argument(
         '--motd-path',
-        help='local path to file with MOTD text message (default: {MOTD_PATH})',
+        help=f'local path to file with MOTD text message (default: {MOTD_PATH})',
         default=MOTD_PATH,
         required=False,
         type=argparse.FileType('x', encoding='UTF-8'),

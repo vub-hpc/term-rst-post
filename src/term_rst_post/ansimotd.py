@@ -40,7 +40,7 @@ from term_rst_post.exit import error_exit
 logger = logging.getLogger()
 
 
-def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=70):
+def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=80):
     """
     Transform MOTD text file by: wrapping, indenting and adding header/footer
     - body_file: (file) text file with MOTD body, it will be updated
@@ -61,11 +61,11 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
             error_exit(f"Failed to read text file: '{part.name}'", err)
         else:
             motd_text.append(part_text)
-            logger.info(f"Added contents of '{part.name}' to MOTD text file")
+            logger.info(f"Added contents of '{part.name}' to ANSI text file")
 
     # Inject extra link between body and footer
     if foot_link:
-        part_link = f"\nMore information in {foot_link}\n"
+        part_link = f"\nMore information in\n{foot_link}\n"
         if foot_file:
             motd_text.insert(-1, part_link)
         else:
@@ -73,11 +73,17 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
 
     motd_text = ''.join(motd_text)
 
+    # Check for long URLs
+    http_urls = re.findall(r'(https?://[^\s]+)', motd_text)
+    for url in http_urls:
+        if len(url) > wrap_width:
+            logger.warning(f"Found a URL longer than ANSI text width: {url} ({len(url)} char)")
+
     # Format MOTD text file
     try:
         with open(body_file.name, 'w') as motd_file:
             motd_lines = motd_text.splitlines()
-            # Wrap text to 70 characters respecting spacings and ANSI escape codes
+            # Wrap text to default column width respecting spacings and ANSI escape codes
             for n, line in enumerate(motd_lines):
                 motd_lines[n : n + 1] = wrap_ansicode(line, wrap_width)
             # Indent with two spaces
