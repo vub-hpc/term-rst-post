@@ -61,7 +61,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
             error_exit(f"Failed to read text file: '{part.name}'", err)
         else:
             motd_text.append(part_text)
-            logger.info(f"Added contents of '{part.name}' to MOTD text file")
+            logger.info(f"Added contents of '{part.name}' to ANSI text file")
 
     # Inject extra link between body and footer
     if foot_link:
@@ -77,7 +77,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
     http_urls = re.findall(r'(https?://[^\s]+)', motd_text)
     for url in http_urls:
         if len(url) > wrap_width:
-            logger.warning(f"Found a URL in MOTD longer than its width: {url} ({len(url)} char)")
+            logger.warning(f"Found a URL longer than ANSI text width: {url} ({len(url)} char)")
 
     # Format MOTD text file
     try:
