@@ -73,6 +73,12 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
 
     motd_text = ''.join(motd_text)
 
+    # Check for long URLs
+    http_urls = re.findall(r'(https?://[^\s]+)', motd_text)
+    for url in http_urls:
+        if len(url) > wrap_width:
+            logger.warning(f"Found a URL in MOTD longer than its width: {url} ({len(url)} char)")
+
     # Format MOTD text file
     try:
         with open(body_file.name, 'w') as motd_file:
