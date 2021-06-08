@@ -121,6 +121,13 @@ def main():
         type=argparse.FileType('r', encoding='UTF-8'),
     )
     cli.add_argument(
+        '--wrap',
+        help='wrap MOTD text file to fixed column width (default: 80, disable: 0)',
+        default=80,
+        type=int,
+        required=False,
+    )
+    cli.add_argument(
         'newspost',
         help='local RST file with ABlog news post or HTML file with ABlog news feed',
         type=argparse.FileType('r', encoding='UTF-8'),
@@ -181,7 +188,7 @@ def main():
         motd['file'] = f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}"
         # Convert RST to ANSI text
         make_ansicode_from_rst(motd['file'], motd['source'], briefing=args.briefing)
-        # Update ANSI text: wrap, indent and add header/footer
+        # Update ANSI text: add header/footer and wrap
         try:
             with open(motd['file'], 'r') as motd_file:
                 accomodate_motd(
@@ -189,6 +196,7 @@ def main():
                     head_file=args.motd_header,
                     foot_file=args.motd_footer,
                     foot_link=motd['url'],
+                    wrap_width=args.wrap,
                 )
         except IOError as err:
             error_exit(f"Failed to read text file: '{motd['file']}'", err)
