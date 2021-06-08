@@ -47,7 +47,7 @@ from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rs
 from term_rst_post.version import VERSION
 
 # Hours that last news post will be eligible as MOTD (--lifespan)
-DEFAULT_LIFETIME = 48
+DEFAULT_LIFETIME = 72
 
 MOTD_DATE_FORMAT = '%d/%m/%Y'
 MOTD_PATH = 'news.motd'
@@ -80,7 +80,7 @@ def main():
     )
     cli.add_argument(
         '--lifespan',
-        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours)',
+        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours, infinite: 0)',
         default=DEFAULT_LIFETIME,
         type=int,
         required=False,
@@ -182,7 +182,7 @@ def main():
         age_hours = motd['age'].total_seconds() / 3600
         logger.debug(f"News post with MOTD is {age_hours:.1f} hours old")
 
-    if motd['age'].total_seconds() < args.lifespan * 3600:
+    if args.lifespan == 0 or motd['age'].total_seconds() < args.lifespan * 3600:
         # Generate new MOTD message for the recent news post
         ansi_file = change_file_extension(motd['source'], '.ansi')
         motd['file'] = f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}"
