@@ -34,10 +34,10 @@ import argparse
 import logging
 import os
 
+from term_rst_post import __version__
 from term_rst_post.ansimotd import accomodate_motd
 from term_rst_post.filetools import change_file_extension
 from term_rst_post.newspost import make_ansicode_from_rst
-from term_rst_post.version import VERSION
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -53,7 +53,7 @@ def main():
         prog='rst2ansi',
         description='Convert RST document to text formatted with ANSI escape codes.',
     )
-    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
+    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(__version__))
     cli.add_argument('-d', '--debug', dest='debug', action='store_true', required=False, help='debug verbosity')
     cli.add_argument(
         '-w',

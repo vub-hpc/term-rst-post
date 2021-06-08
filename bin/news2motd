@@ -38,16 +38,16 @@ import os
 
 from datetime import date, datetime
 
+from term_rst_post import __version__
 from term_rst_post.ansimotd import accomodate_motd
 from term_rst_post.exit import error_exit
 from term_rst_post.filetools import change_file_extension, fileobj_extension, inward_path, valid_dirpath
 from term_rst_post.filetools import common_path_join, rst_path_from_html_link
 from term_rst_post.newsfeed import get_top_ablog_news, valid_url
 from term_rst_post.newspost import get_post_info_from_rst, make_ansicode_from_rst
-from term_rst_post.version import VERSION
 
 # Hours that last news post will be eligible as MOTD (--lifespan)
-DEFAULT_LIFETIME = 48
+DEFAULT_LIFETIME = 72
 
 MOTD_DATE_FORMAT = '%d/%m/%Y'
 MOTD_PATH = 'news.motd'
@@ -69,7 +69,7 @@ def main():
         prog='news2motd',
         description='Format ABlog news post to text format with ANSI escape codes.',
     )
-    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(VERSION))
+    cli.add_argument('-v', '--version', action='version', version='%(prog)s v{}'.format(__version__))
     cli.add_argument('-d', '--debug', help='Debug verbosity', action='store_true', required=False)
     cli.add_argument(
         '--briefing',
@@ -80,7 +80,7 @@ def main():
     )
     cli.add_argument(
         '--lifespan',
-        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours)',
+        help=f'hours that last news post will be shown as MOTD (default: {DEFAULT_LIFETIME} hours, infinite: 0)',
         default=DEFAULT_LIFETIME,
         type=int,
         required=False,
@@ -119,6 +119,13 @@ def main():
         default=None,
         required=False,
         type=argparse.FileType('r', encoding='UTF-8'),
+    )
+    cli.add_argument(
+        '--wrap',
+        help='wrap MOTD text file to fixed column width (default: 80, disable: 0)',
+        default=80,
+        type=int,
+        required=False,
     )
     cli.add_argument(
         'newspost',
@@ -175,13 +182,13 @@ def main():
         age_hours = motd['age'].total_seconds() / 3600
         logger.debug(f"News post with MOTD is {age_hours:.1f} hours old")
 
-    if motd['age'].total_seconds() < args.lifespan * 3600:
+    if args.lifespan == 0 or motd['age'].total_seconds() < args.lifespan * 3600:
         # Generate new MOTD message for the recent news post
         ansi_file = change_file_extension(motd['source'], '.ansi')
         motd['file'] = f"{motd['date'].strftime('%Y-%m-%d')}-{ansi_file}"
         # Convert RST to ANSI text
         make_ansicode_from_rst(motd['file'], motd['source'], briefing=args.briefing)
-        # Update ANSI text: wrap, indent and add header/footer
+        # Update ANSI text: add header/footer and wrap
         try:
             with open(motd['file'], 'r') as motd_file:
                 accomodate_motd(
@@ -189,6 +196,7 @@ def main():
                     head_file=args.motd_header,
                     foot_file=args.motd_footer,
                     foot_link=motd['url'],
+                    wrap_width=args.wrap,
                 )
         except IOError as err:
             error_exit(f"Failed to read text file: '{motd['file']}'", err)
