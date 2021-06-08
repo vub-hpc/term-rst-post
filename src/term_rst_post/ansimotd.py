@@ -127,7 +127,13 @@ def wrap_ansicode(ansistr, column_width, match_width=5):
             match_zone = ansistr[cutleft:cutright]
             # Find first matching substring between end of non-ANSI line and ANSI text
             match_start = match_zone.find(line[(match_width * -1) :])
-            cutpoint = cutleft + match_start + match_width
+            if match_start < 0:
+                # Hard wrap without a match (probably just an empty line)
+                cutpoint = column_width
+                log_msg = f"Hard wrap at {cutpoint} characters. No match found: '{line}' in '{match_zone}'"
+                logger.warning(log_msg) if match_zone else logger.debug(log_msg)
+            else:
+                cutpoint = cutleft + match_start + match_width
             # Split ANSI text in the same text position as non-ANSI text
             leftstr = ansistr[:cutpoint].lstrip()
             ansistr_wrapped.append(leftstr)  # save left part
