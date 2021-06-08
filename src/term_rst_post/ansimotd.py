@@ -33,7 +33,7 @@ import logging
 import os
 import re
 
-from textwrap import indent, wrap
+from textwrap import wrap
 
 from term_rst_post.exit import error_exit
 
@@ -42,7 +42,7 @@ logger = logging.getLogger()
 
 def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, wrap_width=80):
     """
-    Transform MOTD text file by: wrapping, indenting and adding header/footer
+    Transform MOTD text file by: adding header/footer and wrapping to a fixed width
     - body_file: (file) text file with MOTD body, it will be updated
     - head_file: (file) text file that will be prepended to body
     - foot_file: (file) text file that will be appended to body
@@ -86,8 +86,6 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
             # Wrap text to default column width respecting spacings and ANSI escape codes
             for n, line in enumerate(motd_lines):
                 motd_lines[n : n + 1] = wrap_ansicode(line, wrap_width)
-            # Indent with two spaces
-            motd_lines = [indent(line, '  ') for line in motd_lines]
             motd_file.write('\n'.join(motd_lines) + '\n')
     except IOError as err:
         error_exit(f"Failed to open ANSI text file to update its contents: '{body_file.name}'", err)
