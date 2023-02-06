@@ -209,15 +209,13 @@ class ANSICodeTranslator(nodes.NodeVisitor):
 
     def visit_reference(self, node):
         """ Encapsulate links with names """
-        if not self.beyond_limit:
-            if 'name' in node.attributes:
-                self.body.append('[')
+        pass
 
     def depart_reference(self, node):
         """ Encapsulate links with names """
         if not self.beyond_limit:
             if 'name' in node.attributes:
-                self.body.append(']({})'.format(node.attributes['refuri']))
+                self.body.append(' ({})'.format(node.attributes['refuri']))
                 logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
 
     def visit_inline(self, node):
