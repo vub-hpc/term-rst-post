@@ -29,4 +29,4 @@ Init term-rst-post
 @author: Alex Domingo (Vrije Universiteit Brussel)
 """
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
