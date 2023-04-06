@@ -311,6 +311,15 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             else:
                 raise nodes.SkipNode
 
+    def visit_caption(self, node):
+        """ Hide captions as figures and tables are not shown in ANSI text"""
+        if not self.beyond_limit:
+            self.body.append('\n')
+            raise nodes.SkipNode
+
+    def depart_caption(self, node):
+        pass
+
     def visit_UpdateNode(self, node):
         """ ABlog update directive """
         if not self.beyond_limit:
