@@ -32,10 +32,12 @@ Supported substitutions: |Warning|, |Info|
 """
 
 import logging
+import re
+
+from docutils import core, languages, nodes, parsers, readers, utils, transforms, writers
 
 from ablog.post import UpdateDirective
 from sphinx_design.badges_buttons import ButtonLinkDirective
-from docutils import core, languages, nodes, parsers, readers, transforms, writers
 
 from term_rst_post.exit import error_exit
 from term_rst_post.filetools import resolve_path
@@ -215,7 +217,6 @@ class ANSICodeTranslator(nodes.NodeVisitor):
     def depart_reference(self, node):
         """ Encapsulate links with names """
         if not self.beyond_limit:
-            logger.debug("Link element to markdown: '{}'".format(node.attributes))
             if 'refuri' in node.attributes:
                 self.body.append(' ({})'.format(node.attributes['refuri']))
                 logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
@@ -376,6 +377,29 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         """Ignore unknown elements"""
         pass
 
+def plain_ref_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """
+    Convert :ref: role to plain text by striping its target and only printing its label
+    Targets of :ref: are internal labels without meaning that should be hidden
+    """
+    text = utils.unescape(text)
+    regex = re.compile("(.*?)\s*\<(.*?)\>")
+    match = regex.match(text)
+    label = match.group(1)
+    target = match.group(2)
+
+    node = nodes.inline()
+    node += nodes.Text(label)
+
+    return [node], []
+
+def add_extra_roles_directives():
+    """
+    Add extra directives and roles from sphinx, ablog, sphinx_design
+    """
+    parsers.rst.roles.register_local_role("ref", plain_ref_role)
+    parsers.rst.directives.register_directive('update', UpdateDirective)
+    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
 
 def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     """
@@ -384,9 +408,7 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     - rst_filename: (string) Path of RST file
     - briefing: (boolean) Limit conversion to a single paragraph
     """
-    # Add extra directives from ablog, sphinx_design
-    parsers.rst.directives.register_directive('update', UpdateDirective)
-    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
+    add_extra_roles_directives()
 
     # Publish document with custom MOTD reader and ANSICode writer
     try:
@@ -423,11 +445,9 @@ def get_post_info_from_rst(rst_file):
     Parse RST file and return date from its docinfo field list
     - rst_file: (file object) Path of RST file
     """
-    post = {'source': resolve_path(rst_file.name)}
+    add_extra_roles_directives()
 
-    # Add extra directives from ablog, sphinx_design
-    parsers.rst.directives.register_directive('update', UpdateDirective)
-    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
+    post = {'source': resolve_path(rst_file.name)}
 
     # Traverse RST document tree and retrieve post title and date
     rst_doctree = core.publish_doctree(rst_file.read(), reader=MOTDReader())

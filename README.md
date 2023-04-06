@@ -17,7 +17,7 @@ Convert RST documents to text files formatted with markdown and ANSI escape code
   * strong: ANSI bold text
   * emphasis: ANSI underline text
   * literal: markdown literal plus ANSI inverse text
-  * reference: markdown links
+  * reference: print link labels and URLs
   * bullet list: markdown unordered list
   * enumerated list: markdown unordered list
 * Support for custom substitutions:
