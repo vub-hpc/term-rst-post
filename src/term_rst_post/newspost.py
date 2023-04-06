@@ -385,7 +385,7 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
         logger.debug("Opened file with read access: '{}'".format(rst_filename))
 
     try:
-        destination = open(ansicode_filename, 'x')
+        destination = open(ansicode_filename, 'w')
     except IOError as err:
         error_exit("Failed to create text ANSI file: '{}'".format(ansicode_filename), err)
     else:
