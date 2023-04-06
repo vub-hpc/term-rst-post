@@ -34,6 +34,7 @@ Supported substitutions: |Warning|, |Info|
 import logging
 
 from ablog.post import UpdateDirective
+from sphinx_design.badges_buttons import ButtonLinkDirective
 from docutils import core, languages, nodes, parsers, readers, transforms, writers
 
 from term_rst_post.exit import error_exit
@@ -214,7 +215,8 @@ class ANSICodeTranslator(nodes.NodeVisitor):
     def depart_reference(self, node):
         """ Encapsulate links with names """
         if not self.beyond_limit:
-            if 'name' in node.attributes:
+            logger.debug("Link element to markdown: '{}'".format(node.attributes))
+            if 'refuri' in node.attributes:
                 self.body.append(' ({})'.format(node.attributes['refuri']))
                 logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
 
@@ -373,8 +375,9 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     - rst_filename: (string) Path of RST file
     - briefing: (boolean) Limit conversion to a single paragraph
     """
-    # Add update directive from ablog
+    # Add extra directives from ablog, sphinx_design
     parsers.rst.directives.register_directive('update', UpdateDirective)
+    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
 
     # Publish document with custom MOTD reader and ANSICode writer
     try:
@@ -413,8 +416,9 @@ def get_post_info_from_rst(rst_file):
     """
     post = {'source': resolve_path(rst_file.name)}
 
-    # Add update directive from ablog
+    # Add extra directives from ablog, sphinx_design
     parsers.rst.directives.register_directive('update', UpdateDirective)
+    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
 
     # Traverse RST document tree and retrieve post title and date
     rst_doctree = core.publish_doctree(rst_file.read(), reader=MOTDReader())
