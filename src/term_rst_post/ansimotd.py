@@ -30,7 +30,6 @@ Formatting and management of MOTD text files with ANSI escape codes.
 """
 
 import logging
-import os
 import re
 
 from textwrap import wrap
@@ -50,37 +49,48 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
     - wrap_width: (int) max column width of the text file (disable with 0)
     """
     motd_text = list()
-    motd_parts = [part for part in [head_file, body_file, foot_file] if part]
-    logger.debug("Parts included in the MOTD: {}".format(', '.join([part.name for part in motd_parts])))
 
-    # Prepend/Append sections to MOTD
-    for part in motd_parts:
+    # Read sections of MOTD
+    motd_parts = {
+        "head": head_file,
+        "body": body_file,
+        "foot": foot_file,
+    }
+
+    active_parts = [part for part in motd_parts if motd_parts[part]]
+    logger.debug("Parts included in the MOTD: {}".format(', '.join([motd_parts[part].name for part in active_parts])))
+
+    for part in active_parts:
         try:
-            part_text = part.read()
+            part_text = motd_parts[part].read()
         except IOError as err:
-            error_exit(f"Failed to read text file: '{part.name}'", err)
+            error_exit(f"Failed to read text file: '{motd_parts[part].name}'", err)
         else:
-            motd_text.append(part_text)
-            logger.info(f"Added contents of '{part.name}' to ANSI text file")
+            logger.info(f"Adding contents of '{motd_parts[part].name}' to ANSI text file")
+            motd_parts[part] = part_text
+
+    # Soft unwrap body of MOTD keeping double new-lines (i.e. paragraphs)
+    motd_parts["body"] = re.sub('(.)\n(?!\n)', r'\1 ', motd_parts["body"])
 
     # Inject extra link between body and footer
     if foot_link:
-        part_link = f"\nMore information in\n{foot_link}\n"
-        if foot_file:
-            motd_text.insert(-1, part_link)
-        else:
-            motd_text.append(part_link)
+        foot_text = motd_parts["foot"]
+        if foot_text is None:
+            foot_text = ""
 
-    motd_text = ''.join(motd_text)
+        foot_link_text = f"\n\nMore information in\n{foot_link}\n"
+        motd_parts["foot"] = foot_link_text + foot_text
 
     # Check for long URLs
     if wrap_width > 0:
-        http_urls = re.findall(r'(https?://[^\s]+)', motd_text)
+        http_urls = re.findall(r'(https?://[^\s]+)', motd_parts["body"])
         for url in http_urls:
             if len(url) > wrap_width:
                 logger.warning(f"Found a URL longer than ANSI text width: {url} ({len(url)} char)")
 
     # Format MOTD text file
+    motd_text = ''.join([motd_parts[part] for part in active_parts])
+
     try:
         with open(body_file.name, 'w') as motd_file:
             motd_lines = motd_text.splitlines()
