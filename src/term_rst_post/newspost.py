@@ -159,10 +159,11 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             'warning': ('\033[1;31;7m', '\033[0;27m'),  # Red badge on/off
             'info': ('\033[1;32;7m', '\033[0;27m'),  # Green badge on/off
             'update': ('\033[7m', '\033[27m'),  # Inverse on/off
+            'vubhpc': ('\033[4m', '[hpc@vub.be]\033[24m'),  # Underline on/off
             'problematic': ('\n!!!\n', '\n!!!\n'),
         }
 
-        self.badges = ['Warning', 'Info']
+        self.badges = ['Warning', 'Info', 'VUBHPC']
 
     # Utility methods
     def astext(self):
