@@ -70,7 +70,8 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
             motd_parts[part] = part_text
 
     # Soft unwrap body of MOTD keeping double new-lines (i.e. paragraphs)
-    motd_parts["body"] = re.sub('(.)\n(?!\n)', r'\1 ', motd_parts["body"])
+    body_unwrapped = re.sub("(.)\n(?!\n)", r"\1 ", motd_parts["body"])
+    motd_parts["body"] = body_unwrapped + "\n"
 
     # Inject extra link between body and footer
     if foot_link:
@@ -78,7 +79,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
         if foot_text is None:
             foot_text = ""
 
-        foot_link_text = f"\n\nMore information in\n{foot_link}\n"
+        foot_link_text = f"\nMore information in\n{foot_link}\n"
         motd_parts["foot"] = foot_link_text + foot_text
 
     # Check for long URLs
@@ -89,7 +90,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
                 logger.warning(f"Found a URL longer than ANSI text width: {url} ({len(url)} char)")
 
     # Format MOTD text file
-    motd_text = ''.join([motd_parts[part] for part in active_parts])
+    motd_text = ''.join([motd_parts[part] for part in motd_parts if motd_parts[part]])
 
     try:
         with open(body_file.name, 'w') as motd_file:
