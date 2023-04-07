@@ -218,7 +218,7 @@ class ANSICodeTranslator(nodes.NodeVisitor):
     def depart_reference(self, node):
         """ Encapsulate links with names """
         if not self.beyond_limit:
-            if 'refuri' in node.attributes:
+            if 'name' in node.attributes or node.attributes["classes"]:
                 self.body.append(' ({})'.format(node.attributes['refuri']))
                 logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
 
