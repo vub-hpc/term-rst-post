@@ -58,7 +58,7 @@ class MOTDSubstitutions(transforms.Transform):
         logger.debug("Applying custom MOTD transforms in docutils document reader")
         known_subs = set(self.document.substitution_defs)
         # GO through tree of substitutions
-        for ref in self.document.traverse(nodes.substitution_reference):
+        for ref in self.document.findall(nodes.substitution_reference):
             refname = ref['refname']
             if refname not in known_subs:
                 # Replace any undefined substitution with an inline element
@@ -454,12 +454,12 @@ def get_post_info_from_rst(rst_file):
     rst_doctree = core.publish_doctree(rst_file.read(), reader=MOTDReader())
 
     try:
-        title = rst_doctree.traverse(nodes.title)
+        title = rst_doctree.findall(nodes.title)
         post['title'] = list(title)[0].astext()
     except IndexError:
         raise IndexError(f"Malformed RST news post file, missing title: '{rst_file.name}'")
 
-    for field in rst_doctree.traverse(nodes.field):
+    for field in rst_doctree.findall(nodes.field):
         field_name = field.first_child_matching_class(nodes.field_name)
         if field[field_name].astext() == 'date':
             field_body = field.first_child_matching_class(nodes.field_body)
