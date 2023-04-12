@@ -32,9 +32,12 @@ Supported substitutions: |Warning|, |Info|
 """
 
 import logging
+import re
+
+from docutils import core, languages, nodes, parsers, readers, utils, transforms, writers
 
 from ablog.post import UpdateDirective
-from docutils import core, languages, nodes, parsers, readers, transforms, writers
+from sphinx_design.badges_buttons import ButtonLinkDirective
 
 from term_rst_post.exit import error_exit
 from term_rst_post.filetools import resolve_path
@@ -55,7 +58,7 @@ class MOTDSubstitutions(transforms.Transform):
         logger.debug("Applying custom MOTD transforms in docutils document reader")
         known_subs = set(self.document.substitution_defs)
         # GO through tree of substitutions
-        for ref in self.document.traverse(nodes.substitution_reference):
+        for ref in self.document.findall(nodes.substitution_reference):
             refname = ref['refname']
             if refname not in known_subs:
                 # Replace any undefined substitution with an inline element
@@ -156,10 +159,11 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             'warning': ('\033[1;31;7m', '\033[0;27m'),  # Red badge on/off
             'info': ('\033[1;32;7m', '\033[0;27m'),  # Green badge on/off
             'update': ('\033[7m', '\033[27m'),  # Inverse on/off
+            'vubhpc': ('\033[4m', '[hpc@vub.be]\033[24m'),  # Underline on/off
             'problematic': ('\n!!!\n', '\n!!!\n'),
         }
 
-        self.badges = ['Warning', 'Info']
+        self.badges = ['Warning', 'Info', 'VUBHPC']
 
     # Utility methods
     def astext(self):
@@ -214,7 +218,7 @@ class ANSICodeTranslator(nodes.NodeVisitor):
     def depart_reference(self, node):
         """ Encapsulate links with names """
         if not self.beyond_limit:
-            if 'name' in node.attributes:
+            if 'name' in node.attributes or node.attributes["classes"]:
                 self.body.append(' ({})'.format(node.attributes['refuri']))
                 logger.debug("Translated non-explicit link element to markdown: '{}'".format(node.astext()))
 
@@ -309,6 +313,15 @@ class ANSICodeTranslator(nodes.NodeVisitor):
             else:
                 raise nodes.SkipNode
 
+    def visit_caption(self, node):
+        """ Hide captions as figures and tables are not shown in ANSI text"""
+        if not self.beyond_limit:
+            self.body.append('\n')
+            raise nodes.SkipNode
+
+    def depart_caption(self, node):
+        pass
+
     def visit_UpdateNode(self, node):
         """ ABlog update directive """
         if not self.beyond_limit:
@@ -365,6 +378,29 @@ class ANSICodeTranslator(nodes.NodeVisitor):
         """Ignore unknown elements"""
         pass
 
+def plain_ref_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    """
+    Convert :ref: role to plain text by striping its target and only printing its label
+    Targets of :ref: are internal labels without meaning that should be hidden
+    """
+    text = utils.unescape(text)
+    regex = re.compile("(.*?)\s*\<(.*?)\>")
+    match = regex.match(text)
+    label = match.group(1)
+    target = match.group(2)
+
+    node = nodes.inline()
+    node += nodes.Text(label)
+
+    return [node], []
+
+def add_extra_roles_directives():
+    """
+    Add extra directives and roles from sphinx, ablog, sphinx_design
+    """
+    parsers.rst.roles.register_local_role("ref", plain_ref_role)
+    parsers.rst.directives.register_directive('update', UpdateDirective)
+    parsers.rst.directives.register_directive('button-link', ButtonLinkDirective)
 
 def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     """
@@ -373,8 +409,7 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
     - rst_filename: (string) Path of RST file
     - briefing: (boolean) Limit conversion to a single paragraph
     """
-    # Add update directive from ablog
-    parsers.rst.directives.register_directive('update', UpdateDirective)
+    add_extra_roles_directives()
 
     # Publish document with custom MOTD reader and ANSICode writer
     try:
@@ -385,7 +420,7 @@ def make_ansicode_from_rst(ansicode_filename, rst_filename, briefing=False):
         logger.debug("Opened file with read access: '{}'".format(rst_filename))
 
     try:
-        destination = open(ansicode_filename, 'x')
+        destination = open(ansicode_filename, 'w')
     except IOError as err:
         error_exit("Failed to create text ANSI file: '{}'".format(ansicode_filename), err)
     else:
@@ -411,21 +446,20 @@ def get_post_info_from_rst(rst_file):
     Parse RST file and return date from its docinfo field list
     - rst_file: (file object) Path of RST file
     """
-    post = {'source': resolve_path(rst_file.name)}
+    add_extra_roles_directives()
 
-    # Add update directive from ablog
-    parsers.rst.directives.register_directive('update', UpdateDirective)
+    post = {'source': resolve_path(rst_file.name)}
 
     # Traverse RST document tree and retrieve post title and date
     rst_doctree = core.publish_doctree(rst_file.read(), reader=MOTDReader())
 
     try:
-        title = rst_doctree.traverse(nodes.title)
+        title = rst_doctree.findall(nodes.title)
         post['title'] = list(title)[0].astext()
     except IndexError:
         raise IndexError(f"Malformed RST news post file, missing title: '{rst_file.name}'")
 
-    for field in rst_doctree.traverse(nodes.field):
+    for field in rst_doctree.findall(nodes.field):
         field_name = field.first_child_matching_class(nodes.field_name)
         if field[field_name].astext() == 'date':
             field_body = field.first_child_matching_class(nodes.field_body)
