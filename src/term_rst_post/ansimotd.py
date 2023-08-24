@@ -80,7 +80,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
 
     # Inject extra link between body and footer
     if foot_link:
-        foot_link_text = f"\nMore information in\n{foot_link}\n"
+        foot_link_text = f"\nMore information at\n{foot_link}\n"
 
         if motd["foot"]["text"] is None:
             motd["foot"]["text"] = ""
