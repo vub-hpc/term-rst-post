@@ -85,7 +85,7 @@ def get_top_ablog_news(newslist):
         motd = {
             'title': motd_tag.a.string,
             'html_link': motd_tag.a['href'],
-            'date': motd_tag.parent.find('li').i.next_sibling.strip(),
+            'date': motd_tag.parent.find('i', class_="fa-calendar").find_next_sibling().string,
         }
     except AttributeError:
         raise AttributeError(f"Malformed HTML newsfeed from ABlog, missing news header (H2): '{newslist.name}'")
