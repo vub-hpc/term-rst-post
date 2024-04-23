@@ -384,10 +384,12 @@ def plain_ref_role(name, rawtext, text, lineno, inliner, options={}, content=[])
     Targets of :ref: are internal labels without meaning that should be hidden
     """
     text = utils.unescape(text)
-    regex = re.compile("(.*?)\s*\<(.*?)\>")
-    match = regex.match(text)
-    label = match.group(1)
-    target = match.group(2)
+    regex = re.compile(r"(.*?)\s*\<(.*?)\>")
+    try:
+        match = regex.match(text)
+        label = match.group(1)
+    except AttributeError as err:
+        error_exit(f"Failed to extract label from '{text}'", err)
 
     node = nodes.inline()
     node += nodes.Text(label)
