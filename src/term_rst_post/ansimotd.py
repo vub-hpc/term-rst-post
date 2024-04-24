@@ -80,7 +80,7 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
 
     # Inject extra link between body and footer
     if foot_link:
-        foot_link_text = f"\nMore information at\n{foot_link}\n"
+        foot_link_text = f"\nMore information in\n{foot_link}\n"
 
         if motd["foot"]["text"] is None:
             motd["foot"]["text"] = ""
@@ -113,12 +113,11 @@ def accomodate_motd(body_file, head_file=None, foot_file=None, foot_link=None, w
     return motd_file
 
 
-def wrap_ansicode(ansistr, column_width, match_width=5):
+def wrap_ansicode(ansistr, column_width):
     """
     Cuts long text in a single string to a fixed column width accounting for ANSI escape code characters
     - ansistr: (str) text with ANSI escape codes
     - column_width: (int) length of text column in legible characters
-    - match_width: (int) number of characters used to match between the text with/without ANSI escape codes
     """
     # Clear text without the ANSI escape codes
     clearstr = re.sub('\033\[[0-9;]*m', '', ansistr)
@@ -137,23 +136,24 @@ def wrap_ansicode(ansistr, column_width, match_width=5):
         ansistr_wrapped = list()
         for line in clearstr_wrapped:
             # Define search zone in ANSI text around column width boundary of non-ANSI text to find a match between them
-            # search zone = 3x `match_width` to the left and `ansicodes` to the right
-            cutleft = column_width - (match_width * 3)
             cutright = column_width + ansicodes
-            match_zone = ansistr[cutleft:cutright]
+            match_zone = ansistr[:cutright]
             # Find first matching substring between end of non-ANSI line and ANSI text
-            match_start = match_zone.find(line[(match_width * -1) :])
+            line_last_word = line.rstrip().split(' ')[-1]
+            match_start = match_zone.rfind(line_last_word)
             if match_start < 0:
-                # Hard wrap without a match (probably just an empty line)
-                cutpoint = column_width
-                log_msg = f"Hard wrap at {cutpoint} characters. No match found: '{line}' in '{match_zone}'"
+                # Hard wrap without a match (probably just an empty line, or escape codes in match zone)
+                # Find closest white space to text width
+                cutpoint = ansistr[:column_width+ansicodes].rfind(' ')
+                log_msg = f"Hard wrap at {cutpoint} characters. "
+                log_msg += f"No match found: '{line_last_word}' in '{repr(match_zone)}'"
                 logger.warning(log_msg) if match_zone else logger.debug(log_msg)
             else:
-                cutpoint = cutleft + match_start + match_width
+                cutpoint = match_start + len(line_last_word)
             # Split ANSI text in the same text position as non-ANSI text
-            leftstr = ansistr[:cutpoint].lstrip()
+            leftstr = ansistr[:cutpoint].rstrip()
             ansistr_wrapped.append(leftstr)  # save left part
-            ansistr = ansistr[cutpoint:]  # update ANSI text with right part
+            ansistr = ansistr[cutpoint:].lstrip()  # update ANSI text with right part
             ansicodes -= len(ansistr_wrapped[-1]) - len(line)  # update number of ANSI escape code charcaters
 
         logger.debug(

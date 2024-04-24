@@ -384,7 +384,8 @@ def plain_ref_role(name, rawtext, text, lineno, inliner, options={}, content=[])
     Targets of :ref: are internal labels without meaning that should be hidden
     """
     text = utils.unescape(text)
-    regex = re.compile(r"(.*?)\s*\<(.*?)\>")
+    text = " ".join(text.splitlines())
+    regex = re.compile(r"([^<>]*)\s*(\<.*\>)?")
     try:
         match = regex.match(text)
         label = match.group(1)
