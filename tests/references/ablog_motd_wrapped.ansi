@@ -1,27 +1,27 @@
 
 [1m# Test news post with a simple paragraph[22m
 
-[1;31;7m Warning [0;27m Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-[4mSome text with emphasis.[24m Nulla sed orci nec orci elementum facilisis 
-vitae at mauris. Nulla eu ultrices lectus. [1mSome text in bold.[22m Integer 
-vitae purus vel quam laoreet fringilla vitae nec diam. Donec non 
-aliquet nisi. Vivamus quis aliquam purus. Ut non ipsum sit amet eros 
+[1;31;7m Warning [0;27m Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+[4mSome text with emphasis.[24m Nulla sed orci nec orci elementum facilisis
+vitae at mauris. Nulla eu ultrices lectus. [1mSome text in bold.[22m Integer
+vitae purus vel quam laoreet fringilla vitae nec diam. Donec non
+aliquet nisi. Vivamus quis aliquam purus. Ut non ipsum sit amet eros
 imperdiet gravida at a tellus. [7m`Some literal text.`[27m Curabitur at ipsum
-bibendum nunc tincidunt bibendum nec sed sapien. Donec ultrices nunc 
-ligula, aliquet elementum diam tempus at. Morbi condimentum, ligula 
-vitae venenatis aliquam, tellus lectus pulvinar est, vitae efficitur 
+bibendum nunc tincidunt bibendum nec sed sapien. Donec ultrices nunc
+ligula, aliquet elementum diam tempus at. Morbi condimentum, ligula
+vitae venenatis aliquam, tellus lectus pulvinar est, vitae efficitur
 odio magna vitae lorem. Nam quam risus, pellentesque nec facilisis eu,
-facilisis vitae justo. Curabitur a ipsum placerat libero aliquam 
+facilisis vitae justo. Curabitur a ipsum placerat libero aliquam
 volutpat. Proin interdum porta consequat.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sed 
-orci nec orci elementum facilisis vitae at mauris. Nulla eu ultrices 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sed
+orci nec orci elementum facilisis vitae at mauris. Nulla eu ultrices
 lectus. Integer vitae purus vel quam laoreet fringilla vitae nec diam.
-Donec non aliquet nisi. Vivamus quis aliquam purus. Ut non ipsum sit 
-amet eros imperdiet gravida at a tellus. Curabitur at ipsum bibendum 
-nunc tincidunt bibendum nec sed sapien. Donec ultrices nunc ligula, 
-aliquet elementum diam tempus at. Morbi condimentum, ligula vitae 
-venenatis aliquam, tellus lectus pulvinar est, vitae efficitur odio 
-magna vitae lorem. Nam quam risus, pellentesque nec facilisis eu, 
-facilisis vitae justo. Curabitur a ipsum placerat libero aliquam 
+Donec non aliquet nisi. Vivamus quis aliquam purus. Ut non ipsum sit
+amet eros imperdiet gravida at a tellus. Curabitur at ipsum bibendum
+nunc tincidunt bibendum nec sed sapien. Donec ultrices nunc ligula,
+aliquet elementum diam tempus at. Morbi condimentum, ligula vitae
+venenatis aliquam, tellus lectus pulvinar est, vitae efficitur odio
+magna vitae lorem. Nam quam risus, pellentesque nec facilisis eu,
+facilisis vitae justo. Curabitur a ipsum placerat libero aliquam
 volutpat. Proin interdum porta consequat.
